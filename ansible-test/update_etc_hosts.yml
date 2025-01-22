@@ -1,0 +1,17 @@
+---
+- name: Configure /etc/hosts file with the proper entries
+  hosts: all
+  become: yes
+  tasks:
+    - name: Generate the /etc/hosts file from the template
+      template:
+        src: etc_hosts.j2
+        dest: /etc/hosts
+      notify:
+        - Restart networking
+
+  handlers:
+    - name: Restart networking
+      service:
+        name: NetworkManager
+        state: restarted

@@ -1,0 +1,75 @@
+
+---
+- name: Install Ansible Collections using ansible_galaxy
+  hosts: localhost
+  tasks:
+    - name: Install freeipa.ansible_freeipa collection using ansible-galaxy
+      ansible.builtin.command:
+        cmd: ansible-galaxy collection install freeipa.ansible_freeipa
+
+#---
+#- name: Install Ansible Collections using ansible_galaxy
+#  hosts: localhost
+#  tasks:
+#    - name: Install community.general collection
+#      ansible.builtin.ansible_galaxy:
+#        name: freeipa.ansible_freeipa
+#        state: present  # state can be 'present' or 'absent' for installation/uninstallation
+#
+
+###
+- name: Install and Configure FreeIPA Server
+  hosts: ipaserver
+  become: yes
+#  vars:
+#    ipaadmin_password: "{{ ipaadmin_password }}"
+#    ipaserver_domain: "{{ ipaserver_domain }}"
+#    ipaserver_realm: "{{ ipaserver_realm }}"
+#    ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
+#    ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+
+  tasks:
+#    - name: Print all variables passed to the playbook
+#      debug:
+#        var: hostvars[inventory_hostname]
+#
+    - name: Print variables passed to the playbook
+      debug:
+        msg: |
+          ipaadmin_password: "{{ ipaadmin_password }}"
+          ipaserver_domain: "{{ ipaserver_domain }}"
+          ipaserver_realm: "{{ ipaserver_realm }}"
+          ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
+          ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+
+    - name: Install FreeIPA Server (Using the freeipa.ansible_freeipa collection)
+      ansible.builtin.yum:
+        name: freeipa-server
+        state: present
+
+#- name: Install and Configure FreeIPA Server
+#  hosts: ipaserver
+#  become: yes
+#  vars:
+#    ipaadmin_password: "{{ ipaadmin_password }}"
+#    ipaserver_domain: "{{ ipaserver_domain }}"
+#    ipaserver_realm: "{{ ipaserver_realm }}"
+#    ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
+#    ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+#
+#  tasks:
+#    - name: Install FreeIPA Server (Using the freeipa.ansible_freeipa collection)
+#      ansible.builtin.yum:
+#        name: freeipa-server
+#        state: present
+#
+#    - name: Setup FreeIPA Server
+#      freeipa.ansible_freeipa.freeipa_server:
+#        domain: "{{ ipaserver_domain }}"
+#        realm: "{{ ipaserver_realm }}"
+#        admin_password: "{{ ipaadmin_password }}"
+#        setup_dns: "{{ ipaserver_setup_dns }}"
+#        auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+#        state: present
+#
+...

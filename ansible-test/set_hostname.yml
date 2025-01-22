@@ -1,0 +1,20 @@
+---
+- name: Set hostname to IP address
+  hosts: all
+  become: yes
+  tasks:
+    - name: Print cldr_hostname and ipaserver_domain
+      debug:
+        msg: "cldr_hostname is {{ cldr_hostname }} and ipaserver_domain is {{ ipaserver_domain }}"
+
+    - name: Set system hostname to IP address with domain
+      hostname:
+        name: "{{ cldr_hostname }}.{{ ipaserver_domain }}"
+
+    - name: Verify hostname has been set
+      command: hostname
+      register: current_hostname
+
+    - name: Display the new hostname
+      debug:
+        msg: "The hostname is now: {{ current_hostname.stdout }}"
