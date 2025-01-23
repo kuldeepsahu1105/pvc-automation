@@ -1,0 +1,107 @@
+---
+- name: Generate and Distribute SSH Key Pair
+  hosts: ipaserver
+  become: true
+  vars:
+    # User whose SSH keys we are generating (defaults to 'root')
+    ssh_user: "{{ ssh_user | default('root') }}"
+    force_generate: "{{ force_generate | default(false) }}"
+
+    # Handle home directory correctly based on user
+    ssh_dir: "{{ '/root/.ssh' if ssh_user == 'root' else '/home/' + ssh_user + '/.ssh' }}"
+    private_key_path: "{{ ssh_dir }}/id_rsa"
+    public_key_path: "{{ ssh_dir }}/id_rsa.pub"
+    authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
+
+  tasks:
+    - name: Ensure .ssh directory exists on ipaserver for {{ ssh_user }}
+      file:
+        path: "{{ ssh_dir }}"
+        state: directory
+        mode: '0700'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+
+    - name: Check if SSH private key exists on ipaserver
+      stat:
+        path: "{{ private_key_path }}"
+      register: private_key_stat
+
+    - name: Generate SSH key pair on ipaserver if it does not exist or force_generate is true
+      openssh_keypair:
+        path: "{{ private_key_path }}"
+        type: rsa
+        size: 2048
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0600'
+      when: private_key_stat.stat.exists == false or force_generate == true
+      register: ssh_keypair
+      notify:
+        - Add public key to authorized_keys
+
+    - name: Skip SSH key generation if key already exists and force_generate is false
+      debug:
+        msg: "Using existing SSH key pair for {{ ssh_user }}"
+      when: private_key_stat.stat.exists == true and force_generate == false
+
+    - name: Add public key to authorized_keys on ipaserver for {{ ssh_user }}
+      authorized_key:
+        user: "{{ ssh_user }}"
+        state: present
+        key: "{{ ssh_keypair.public_key }}"
+      when: private_key_stat.stat.exists == false or force_generate == true
+
+- name: Copy SSH Key to Other Hosts
+  hosts: all
+  become: true
+  vars:
+    # User whose SSH keys are being copied (defaults to 'root')
+    ssh_user: "{{ ssh_user | default('root') }}"
+    force_generate: "{{ force_generate | default(false) }}"
+
+    # Handle home directory correctly based on user
+    ssh_dir: "{{ '/root/.ssh' if ssh_user == 'root' else '/home/' + ssh_user + '/.ssh' }}"
+    private_key_path: "{{ ssh_dir }}/id_rsa"
+    public_key_path: "{{ ssh_dir }}/id_rsa.pub"
+    authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
+
+  tasks:
+    - name: Ensure .ssh directory exists on target hosts for {{ ssh_user }}
+      file:
+        path: "{{ ssh_dir }}"
+        state: directory
+        mode: '0700'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+
+    - name: Copy SSH private key to target hosts for {{ ssh_user }}
+      copy:
+        src: "{{ private_key_path }}"
+        dest: "{{ ssh_dir }}/id_rsa"
+        mode: '0600'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+
+    - name: Copy SSH public key to target hosts for {{ ssh_user }}
+      copy:
+        src: "{{ public_key_path }}"
+        dest: "{{ ssh_dir }}/id_rsa.pub"
+        mode: '0644'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+
+    - name: Copy authorized_keys file to target hosts for {{ ssh_user }}
+      copy:
+        src: "{{ authorized_keys_path }}"
+        dest: "{{ ssh_dir }}/authorized_keys"
+        mode: '0600'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+
+  handlers:
+    - name: Add public key to authorized_keys
+      authorized_key:
+        user: "{{ ssh_user }}"
+        state: present
+        key: "{{ ssh_keypair.public_key }}"
