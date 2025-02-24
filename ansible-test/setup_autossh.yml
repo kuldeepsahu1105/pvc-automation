@@ -1,22 +1,11 @@
 - name: Generate and Distribute SSH Key Pair
   hosts: ipaserver
   become: true
-  # vars:
-  #   # User whose SSH keys we are generating (defaults to 'root')
-  #   ssh_user: "root"
-  #   # ssh_user: "{{ ssh_user | default('root') }}"
-  #   ssh_dir: "/root/.ssh"  # Explicitly set to /root/.ssh
-  #   # Handle home directory correctly based on user
-  #   # ssh_dir: "{{ '/root/.ssh' if ssh_user == 'root' else '/home/' + ssh_user + '/.ssh' }}"
-  #   private_key_path: "{{ ssh_dir }}/id_rsa"
-  #   public_key_path: "{{ ssh_dir }}/id_rsa.pub"
-  #   authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
-  #   force_generate: "{{ hostvars[inventory_hostname].force_generate | default(false) }}"
   vars_files:
     - ssh_vars.yml
 
   tasks:
-    - name: Ensure .ssh directory exists for "{{ ssh_user }}"
+    - name: Ensure .ssh directory exists for {{ ssh_user }}
       file:
         path: "{{ ssh_dir }}"
         state: directory
@@ -24,12 +13,12 @@
         owner: "{{ ssh_user }}"
         group: "{{ ssh_user }}"
 
-    - name: Check if SSH private key exists in "{{ ssh_dir }}"
+    - name: Check if SSH private key exists in {{ ssh_dir }}
       stat:
         path: "{{ private_key_path }}"
       register: private_key_stat
 
-    - name: Generate SSH key pair in "{{ ssh_dir }}"
+    - name: Generate SSH key pair in {{ ssh_dir }}
       openssh_keypair:
         path: "{{ private_key_path }}"
         type: rsa
@@ -39,7 +28,7 @@
         mode: '0600'
       when: private_key_stat.stat.exists == false or force_generate == true
 
-    - name: Read the public key file from "{{ ssh_dir }}"
+    - name: Read the public key file from {{ ssh_dir }}
       slurp:
         src: "{{ public_key_path }}"
       register: public_key_data
@@ -49,7 +38,7 @@
         msg: "Failed to read public key from {{ public_key_path }}"
       when: public_key_data is not defined or public_key_data.content is not defined
 
-    - name: Add public key to authorized_keys for "{{ ssh_dir }}"
+    - name: Add public key to authorized_keys for {{ ssh_dir }}
       authorized_key:
         user: "{{ ssh_user }}"
         state: present
@@ -57,13 +46,13 @@
       when: public_key_data is defined and public_key_data.content is defined
 
 - name: Copy SSH Key to Other Hosts
-  hosts: all:!ipaserver  # Copy to all except ipaserver itself
+  hosts: all:!ipaserver
   become: true
   vars_files:
     - ssh_vars.yml
 
   tasks:
-    - name: Ensure .ssh directory exists for "{{ ssh_user }}" on target hosts
+    - name: Ensure .ssh directory exists for {{ ssh_user }} on target hosts
       file:
         path: "{{ ssh_dir }}"
         state: directory
