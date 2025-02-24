@@ -4,11 +4,11 @@
   become: yes  # Ensure you have the necessary privileges
   tasks:
 
-    - name: Update all packages
-      dnf:
-        name: "*"
-        state: latest
-      register: update_result
+    # - name: Update all packages
+    #   dnf:
+    #     name: "*"
+    #     state: latest
+    #   register: update_result
 
     - name: Install required packages
       dnf:
@@ -22,6 +22,9 @@
           - nc
           - python3
           - python3-pip
+          - gcc  # Required for compiling some Python packages
+          - python3-devel  # Required for some Python libraries
+          - postgresql-libs  # Ensures PostgreSQL dependencies are installed
         state: present
 
     - name: Upgrade pip3 to the latest version
@@ -58,3 +61,9 @@
           - python3-pip
         state: present
 
+    - name: Install psycopg2-binary
+      pip:
+        name: psycopg2-binary
+        state: present
+        executable: pip3
+      become: yes

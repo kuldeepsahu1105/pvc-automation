@@ -1,0 +1,52 @@
+- name: Manage FreeIPA DNS Zones and Records
+  hosts: ipaserver
+  gather_facts: yes
+  become: yes
+  vars:
+    ipaadmin_principal: "admin"
+    ipaadmin_password: "ADMPassword1"
+
+  tasks:
+    - name: Ensure Kerberos Ticket is Present
+      command: kinit {{ ipaadmin_principal }}
+      args:
+        stdin: "{{ ipaadmin_password }}"
+      no_log: true
+      register: kinit_result
+      changed_when: false
+      failed_when: kinit_result.rc != 0
+
+    - name: Validate IPA Services
+      command: ipactl status
+      register: ipa_status
+      changed_when: false
+      failed_when: "'The ipactl command was successful' not in ipa_status.stdout"
+
+    - name: Print Current Kerberos Ticket
+      command: klist -e
+      register: kerberos_ticket
+      changed_when: false
+
+    - name: Debug Kerberos Ticket Details
+      debug:
+        msg: "{{ kerberos_ticket.stdout_lines }}"
+
+    - name: Extract Reverse DNS Zone from IP Address
+      set_fact:
+        reverse_dns_zone: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['network'].split('.')[1] }}.{{ hostvars[inventory_hostname]['ansible_default_ipv4']['network'].split('.')[0] }}.in-addr.arpa."
+
+    - name: Ensure Reverse DNS Zone is Present
+      freeipa.ansible_freeipa.ipadnszone:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ reverse_dns_zone }}"
+        state: present
+
+    - name: Add PTR Records Dynamically
+      freeipa.ansible_freeipa.ipadnsrecord:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.split('.')[3] }}.{{ item.split('.')[2] }}"
+        zone_name: "{{ reverse_dns_zone }}"
+        record_type: 'PTR'
+        record_value: "{{ hostvars[item]['cldr_hostname'] }}.cdppvcds.com."
+        state: present
+      loop: "{{ groups['all'] }}"

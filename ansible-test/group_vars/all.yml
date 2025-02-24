@@ -1,0 +1,23 @@
+---
+# ansible_config_vars
+ansible_user: ec2-user
+ansible_ssh_private_key_file: kuldeep-pvc-session.pem
+ansible_ssh_common_args: "-o StrictHostKeyChecking: no"
+
+# ipa_server_vars
+ipaadmin_password: ADMPassword1
+ipadm_password: "{{ ipaadmin_password }}"
+ipaserver_domain: cdppvcds.com
+ipaserver_realm: "{{ ipaserver_domain | upper }}"
+ipaserver_setup_dns: yes
+ipaserver_auto_forwarders: yes
+ipaserver_install_packages: no
+ipaserver_setup_firewalld: no
+
+# ssh_vars
+ssh_user: "root"
+ssh_dir: "/root/.ssh"
+private_key_path: "{{ ssh_dir }}/id_rsa"
+public_key_path: "{{ ssh_dir }}/id_rsa.pub"
+authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
+force_generate: "{{ hostvars[inventory_hostname].force_generate | default(false) }}"
