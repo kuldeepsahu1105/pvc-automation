@@ -1,7 +1,8 @@
 ---
-- name: Configure /etc/hosts file with the proper entries
+- name: Configure /etc/hosts file and Gather System Information
   hosts: all
   become: yes
+
   tasks:
     - name: Generate the /etc/hosts file from the template
       template:
@@ -10,19 +11,8 @@
       notify:
         - Restart networking
 
-  handlers:
-    - name: Restart networking
-      service:
-        name: network
-        state: restarted
-
----
-- name: Gather System Information
-  hosts: all
-  become: yes
-  tasks:
     - name: Ensure OS version is RHEL 9.x
-      command: cat /etc/*rel* | grep -E 'NAME|VERSION'
+      shell: cat /etc/*rel* | grep -E 'NAME|VERSION'
       register: os_version
       changed_when: false
 
@@ -58,7 +48,7 @@
         msg: "Content of /etc/hostname: {{ hostname_file.stdout }}"
 
     - name: Verify IP Address on eth0 interface
-      command: ip addr show eth0 | grep -e inet
+      shell: ip addr show eth0 | grep -e inet
       register: eth0_ip
       changed_when: false
 
@@ -67,13 +57,14 @@
         msg: "eth0 IP Address: {{ eth0_ip.stdout }}"
 
     - name: Verify IP Address on eth1 interface
-      command: ip addr show eth1 | grep -e inet
+      shell: "ip addr show eth1 | grep -e inet"
       register: eth1_ip
       changed_when: false
+      failed_when: false  # Prevent failure if eth1 does not exist
 
-    - name: Print eth1 IP Address
+    - name: Print eth1 IP Address (if available)
       debug:
-        msg: "eth1 IP Address: {{ eth1_ip.stdout }}"
+        msg: "eth1 IP Address: {{ eth1_ip.stdout | default('eth1 not found, skipping...') }}"
 
     - name: Verify IP Address matching hostname
       command: ip addr show | grep $(hostname -i)
@@ -101,3 +92,9 @@
     - name: Print Kernel Version
       debug:
         msg: "Kernel Version: {{ kernel_version.stdout }}"
+
+  handlers:
+    - name: Restart networking
+      service:
+        name: network
+        state: restarted
