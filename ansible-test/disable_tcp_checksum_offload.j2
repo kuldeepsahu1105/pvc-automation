@@ -1,0 +1,5 @@
+#!/bin/bash
+# Disable TCP Checksum Offload on the identified network interface
+
+INTERFACE="{{ network_interface }}"
+ethtool -K $INTERFACE tx off

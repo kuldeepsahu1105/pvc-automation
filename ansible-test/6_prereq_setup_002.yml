@@ -1,0 +1,201 @@
+---
+- name: Configure Syslog, Ulimit, and System Settings
+  hosts: all
+  become: yes
+  tasks:
+  
+    # Syslog verification steps
+    - name: Check rsyslog version
+      command: rsyslogd -v
+      register: rsyslog_version
+
+    - name: Display rsyslog version
+      debug:
+        msg: "rsyslog version: {{ rsyslog_version.stdout }}"
+
+    - name: Check rsyslog service status
+      command: service rsyslog status
+      register: rsyslog_status
+
+    - name: Display rsyslog service status
+      debug:
+        msg: "rsyslog service status: {{ rsyslog_status.stdout }}"
+
+    # Ulimit Configuration (Directly Apply to All Nodes)
+    - name: Ensure ulimit values are set in /etc/security/limits.conf
+      lineinfile:
+        path: /etc/security/limits.conf
+        line: "{{ item }}"
+        create: yes
+        backup: yes  # Backup before modification
+      with_items:
+        - "* soft nofile 1048576"
+        - "* hard nofile 1048576"
+
+    # Ensure /etc/pam.d/su has correct settings using a template
+    - name: Configure PAM settings
+      template:
+        src: pam_su.j2
+        dest: /etc/pam.d/su
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes  # Backup before modification
+
+    # TCP Retries Configuration (Directly Apply to All Nodes)
+    - name: Set TCP retries in /etc/sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "net.ipv4.tcp_retries2=5"
+        create: yes
+        backup: yes  # Backup before modification
+
+    # Disable IPv6 Defaults (Exclude ecsmasternodes and ecsnodes)
+    - name: Disable IPv6 in sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "{{ item }}"
+        create: yes
+        backup: yes  # Backup before modification
+      with_items:
+        - "net.ipv6.conf.all.disable_ipv6 = 1"
+        - "net.ipv6.conf.default.disable_ipv6 = 1"
+        - "net.ipv6.conf.lo.disable_ipv6 = 0"
+      when: inventory_hostname not in ['ecsmasternodes', 'ecsnodes']
+
+    # Disable Swapping
+    - name: Set VM swappiness to 1
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "vm.swappiness=1"
+        create: yes
+        backup: yes  # Backup before modification
+
+    # Disable Memory Overcommit
+    - name: Set vm.overcommit_memory to 0
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "vm.overcommit_memory=0"
+        create: yes
+        backup: yes  # Backup before modification
+
+    # Reload sysctl settings
+    - name: Reload sysctl settings
+      command: sysctl -p
+      register: sysctl_reload_output
+
+    - name: Display sysctl reload output
+      debug:
+        msg: "{{ sysctl_reload_output.stdout }}"
+
+    # Verify sysctl.conf contents
+    - name: Show /etc/sysctl.conf contents
+      command: cat /etc/sysctl.conf
+      register: sysctl_conf_contents
+
+    - name: Display sysctl.conf contents
+      debug:
+        msg: "{{ sysctl_conf_contents.stdout }}"
+
+    # Disable Transparent Huge Pages (THP)
+    - name: Disable Transparent Huge Pages (THP) at runtime
+      shell: "{{ item }}"
+      with_items:
+        - "echo never > /sys/kernel/mm/transparent_hugepage/enabled"
+        - "echo never > /sys/kernel/mm/transparent_hugepage/defrag"
+
+    - name: Create THP disable script from template on ipaserver
+      template:
+        src: thp_disable.j2
+        dest: /root/thp_disable
+        mode: '0755'
+        backup: yes
+      delegate_to: ipaserver
+
+    - name: Copy THP disable script to all nodes
+      copy:
+        src: /root/thp_disable
+        dest: /root/thp_disable
+        mode: '0755'
+      when: inventory_hostname != 'ipaserver'
+
+    # Append THP disable script to rc.local for execution at boot
+    - name: Append THP disable script to /etc/rc.d/rc.local
+      shell: "cat /root/thp_disable >> /etc/rc.d/rc.local"
+      args:
+        executable: /bin/bash
+      backup: yes
+
+    - name: Ensure rc.local is executable
+      file:
+        path: /etc/rc.d/rc.local
+        mode: '0755'
+
+    - name: Display rc.local content
+      command: cat /etc/rc.d/rc.local
+      register: rc_local_content
+
+    - name: Show rc.local contents
+      debug:
+        msg: "{{ rc_local_content.stdout }}"
+
+    # Disable Tuned Service
+    - name: Ensure tuned service is started
+      systemd:
+        name: tuned
+        state: started
+        enabled: yes
+
+    - name: Turn off tuned service
+      command: tuned-adm off
+
+    - name: Verify no active tuned profile
+      command: tuned-adm list
+      register: tuned_profiles
+
+    - name: Display tuned profiles
+      debug:
+        msg: "{{ tuned_profiles.stdout }}"
+
+    - name: Stop and disable tuned service
+      systemd:
+        name: tuned
+        state: stopped
+        enabled: no
+
+---
+- name: Disable TCP Checksum Offload on ECS Nodes
+  hosts: ecsmasternodes, ecsnodes
+  become: yes
+  tasks:
+
+    - name: Identify network interface in use (excluding loopback)
+      shell: |
+        ifconfig | grep flags | grep -v lo || ip addr | grep mtu | grep -v lo
+      register: network_interface_info
+
+    - name: Extract interface name
+      set_fact:
+        network_interface: "{{ network_interface_info.stdout_lines[0].split(':')[0] }}"
+
+    - name: Display detected network interface
+      debug:
+        msg: "Identified network interface: {{ network_interface }}"
+
+    - name: Generate TCP checksum offload disable script from template
+      template:
+        src: disable_tcp_checksum_offload.j2
+        dest: /root/disable_tcp_checksum.sh
+        mode: '0755'
+        backup: yes
+
+    - name: Execute TCP checksum offload disable script
+      command: /root/disable_tcp_checksum.sh
+
+    - name: Verify TCP checksum offload is disabled
+      shell: "ethtool -k {{ network_interface }} | grep tx-checksumming"
+      register: checksum_offload_status
+
+    - name: Display checksum offload status
+      debug:
+        msg: "{{ checksum_offload_status.stdout }}"
