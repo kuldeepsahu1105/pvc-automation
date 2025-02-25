@@ -1,6 +1,6 @@
 ---
 - name: Playbook to configure IPA server
-  hosts: all:!ipaserver
+  hosts: ipaserver
   become: true
   vars_files:
     - group_vars/all.yml

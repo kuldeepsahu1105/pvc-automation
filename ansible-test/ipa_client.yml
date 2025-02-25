@@ -1,0 +1,28 @@
+---
+- name: Enroll nodes as IPA clients
+  hosts: all:!ipaserver  # Exclude ipaserver automatically
+  become: true
+  vars_files:
+    - group_vars/all.yml
+
+  tasks:
+    - name: Install required IPA client packages
+      dnf:
+        name: ipa-client
+        state: present
+
+    - name: Run IPA client installation non-interactively
+      shell: >
+        ipa-client-install --force-join
+        --domain={{ ipaserver_domain }}
+        --server={{ ipaserver_hostname }}
+        --principal={{ ipaadmin_principal }}
+        --password={{ ipaadmin_password }}
+        --no-dnssec-validation
+        {% if chrony_enabled == 'yes' %} --ntp {% endif %}
+      register: ipa_client_install_result
+      changed_when: "'Configuration was successful' in ipa_client_install_result.stdout"
+
+    - name: Display installation result
+      debug:
+        var: ipa_client_install_result.stdout
