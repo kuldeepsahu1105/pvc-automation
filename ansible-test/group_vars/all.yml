@@ -5,12 +5,11 @@ ansible_ssh_private_key_file: kuldeep-pvc-session.pem
 ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
 # ipa_server_vars
-ipaserver_hostname: "ipaserver.cdppvcds.com"
+ipaserver_domain: cldrsetup.local
+ipaserver_realm: "{{ ipaserver_domain | upper }}"
 ipaadmin_principal: "admin"
 ipaadmin_password: vmware123
 ipadm_password: "{{ ipaadmin_password }}"
-ipaserver_domain: cdppvcds.com
-ipaserver_realm: "{{ ipaserver_domain | upper }}"
 ipaserver_setup_dns: yes
 ipaserver_auto_forwarders: yes
 ipaserver_install_packages: no

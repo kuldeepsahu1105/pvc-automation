@@ -1,3 +1,4 @@
+---
 - name: Manage FreeIPA DNS Zones and Records
   hosts: ipaserver
   gather_facts: yes
@@ -44,7 +45,7 @@
         name: "{{ item.split('.')[3] }}.{{ item.split('.')[2] }}"
         zone_name: "{{ reverse_dns_zone }}"
         record_type: 'PTR'
-        record_value: "{{ hostvars[item]['cldr_hostname'] }}.cdppvcds.com."
+        record_value: "{{ hostvars[item]['cldr_hostname'] }}.{{ ipaserver_domain }}."
         state: present
       loop: "{{ groups['all'] }}"
 
@@ -65,4 +66,3 @@
     - name: Debug dig Output
       debug:
         msg: "{{ dig_result.stdout_lines | select('search', 'ANSWER') | list }}"
-
