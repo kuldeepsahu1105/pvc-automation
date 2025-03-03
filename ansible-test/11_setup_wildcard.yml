@@ -1,0 +1,81 @@
+---
+- name: Configure wildcard DNS record and distribute PostgreSQL JDBC driver
+  hosts: ipaserver
+  become: true
+
+  tasks:
+    - name: Get ECS Master IP dynamically
+      set_fact:
+        ecs_master_ip: "{{ hostvars[groups['ecs-masters'][0]]['inventory_hostname'] }}"
+
+    - name: Debug ECS Master IP
+      debug:
+        msg: "ECS Master IP is {{ ecs_master_ip }}"
+
+    - name: Add wildcard DNS record for ECS
+      freeipa.ansible_freeipa.ipadnsrecord:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        zone_name: "{{ ipaserver_domain }}"
+        record_name: "{{ wildcard_dns_record }}"
+        record_type: "A"
+        record_value: "{{ ecs_master_ip }}"
+        state: present
+
+    - name: Validate DNS resolution using nslookup
+      command: "nslookup console-cdp.apps.{{ ipaserver_domain }}"
+      register: nslookup_output
+      changed_when: false
+
+    - name: Display nslookup output
+      debug:
+        var: nslookup_output.stdout_lines
+
+    - name: Validate DNS resolution using dig
+      command: "dig console-cdp.apps.{{ ipaserver_domain }} A"
+      register: dig_output
+      changed_when: false
+
+    - name: Display dig output
+      debug:
+        var: dig_output.stdout_lines
+
+    - name: Reverse lookup validation
+      command: "dig -x {{ ecs_master_ip }}"
+      register: reverse_lookup
+      changed_when: false
+
+    - name: Display reverse lookup result
+      debug:
+        var: reverse_lookup.stdout_lines
+
+# need to test this once bcoz donwload url was not working
+- name: Download and distribute PostgreSQL JDBC driver
+  hosts: ipaserver
+  become: true
+  tasks:
+    - name: Download PostgreSQL JDBC driver on IPA server
+      get_url:
+        url: "{{ jdbc_driver_url }}"
+        dest: "/tmp/postgresql-{{ postgres_jdbc_version }}.jar"
+        mode: '0644'
+
+- name: Copy JDBC driver from IPA server to all hosts
+  hosts: all
+  become: true
+  tasks:
+    - name: Copy JDBC driver from IPA server to all hosts
+      copy:
+        src: "/tmp/postgresql-{{ postgres_jdbc_version }}.jar"
+        dest: "{{ jdbc_driver_dest }}"
+        mode: '0644'
+        remote_src: yes
+      delegate_to: ipaserver
+
+    - name: Verify JDBC driver file
+      command: "ls -l {{ jdbc_driver_dest }}"
+      register: jdbc_ls_output
+      changed_when: false
+
+    - name: Display JDBC driver file details
+      debug:
+        var: jdbc_ls_output.stdout_lines

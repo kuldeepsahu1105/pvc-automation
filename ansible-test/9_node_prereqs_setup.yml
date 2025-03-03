@@ -1,0 +1,125 @@
+---
+- name: Enable Repositories and Install Packages
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Enable RHEL repositories
+      command: >
+        subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms
+        --enable=rhel-9-for-x86_64-appstream-rpms
+
+    - name: Install necessary packages
+      dnf:
+        name:
+          - python3
+          - java-17-openjdk
+          - java-17-openjdk-devel
+          - python3-pip
+          - wget
+          - telnet
+          - mlocate
+          - tar
+          - traceroute
+          - net-tools
+          - bind-utils
+          - nc
+        state: present
+
+    - name: Verify Java installation
+      command: java -version
+      register: java_version_output
+      changed_when: false
+    
+    - name: Display Java version
+      debug:
+        msg: "{{ java_version_output.stdout_lines }}"
+
+    - name: Verify Python installation
+      command: python3 -V
+      register: python_version_output
+      changed_when: false
+    
+    - name: Display Python version
+      debug:
+        msg: "{{ python_version_output.stdout_lines }}"
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        state: latest
+    
+    - name: Verify pip version
+      command: pip3 -V
+      register: pip_version_output
+      changed_when: false
+    
+    - name: Display pip version
+      debug:
+        msg: "{{ pip_version_output.stdout_lines }}"
+    
+    - name: Install psycopg2-binary
+      pip:
+        name: psycopg2-binary
+        state: present
+    
+    - name: Verify psycopg2 installation
+      command: pip3 list | grep psy
+      register: psycopg2_output
+      changed_when: false
+    
+    - name: Display psycopg2 installation output
+      debug:
+        msg: "{{ psycopg2_output.stdout_lines }}"
+
+    - name: Install PostgreSQL repository
+      dnf:
+        name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        state: present
+        disable_gpg_check: yes
+
+    - name: Install PostgreSQL 14
+      ansible.builtin.dnf:
+        name: postgresql14
+        state: present
+    
+    - name: Verify PostgreSQL installation
+      ansible.builtin.command: psql --version
+      register: psql_version
+      changed_when: false
+
+    - name: Debug PostgreSQL version
+      ansible.builtin.debug:
+        msg: "{{ psql_version.stdout }}"
+
+- name: Download FreeIPA client packages and configure Chrony
+  hosts: all:!ipaserver
+  become: yes
+
+  tasks:
+    - name: Download FreeIPA client packages and required packages
+      dnf:
+        name:
+          - freeipa-client
+          - openldap-clients
+          - krb5-workstation
+          - krb5-libs
+        state: present
+
+    - name: Verify Chrony tracking
+      command: chronyc tracking
+      register: chrony_tracking_output
+      changed_when: false
+    
+    - name: Display Chrony tracking output
+      debug:
+        msg: "{{ chrony_tracking_output.stdout_lines }}"
+
+    - name: Verify Chrony sources
+      command: chronyc sources
+      register: chrony_sources_output
+      changed_when: false
+    
+    - name: Display Chrony sources output
+      debug:
+        msg: "{{ chrony_sources_output.stdout_lines }}"

@@ -66,3 +66,9 @@
     - name: Debug dig Output
       debug:
         msg: "{{ dig_result.stdout_lines | select('search', 'ANSWER') | list }}"
+
+
+# need to add this in setup_dns.yml
+# ipa dnsrecord-find cldrsetup.local --name=*.apps
+# add nslookup and dig checks
+# see if we can add wildcard zone before installing client

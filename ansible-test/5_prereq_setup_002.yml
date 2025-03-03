@@ -50,7 +50,7 @@
         create: yes
         backup: yes  # Backup before modification
 
-    # Disable IPv6 Defaults (Exclude ecsmasternodes and ecsnodes)
+    # Disable IPv6 Defaults (Exclude ecs-masters and ecs-workers)
     - name: Disable IPv6 in sysctl.conf
       lineinfile:
         path: /etc/sysctl.conf
@@ -61,7 +61,7 @@
         - "net.ipv6.conf.all.disable_ipv6 = 1"
         - "net.ipv6.conf.default.disable_ipv6 = 1"
         - "net.ipv6.conf.lo.disable_ipv6 = 0"
-      when: inventory_hostname not in ['ecsmasternodes', 'ecsnodes']
+      when: inventory_hostname not in ['ecs-masters', 'ecs-workers']
 
     # Disable Swapping
     - name: Set VM swappiness to 1
@@ -97,36 +97,25 @@
       debug:
         msg: "{{ sysctl_conf_contents.stdout }}"
 
-    # Disable Transparent Huge Pages (THP)
+# Disable Transparent Huge Pages (THP)
+- name: Disable Transparent Huge Pages and IPv6 on all nodes
+  hosts: all
+  become: true
+  tasks:
+
     - name: Disable Transparent Huge Pages (THP) at runtime
       shell: "{{ item }}"
       with_items:
         - "echo never > /sys/kernel/mm/transparent_hugepage/enabled"
         - "echo never > /sys/kernel/mm/transparent_hugepage/defrag"
 
-    - name: Create THP disable script from template on ipaserver
+    - name: Deploy rc.local template
       template:
-        src: thp_disable.j2
-        dest: /root/thp_disable
+        src: rc.local.j2
+        dest: /etc/rc.d/rc.local
         mode: '0755'
-        backup: yes
-      delegate_to: ipaserver
 
-    - name: Copy THP disable script to all nodes
-      copy:
-        src: /root/thp_disable
-        dest: /root/thp_disable
-        mode: '0755'
-      when: inventory_hostname != 'ipaserver'
-
-    # Append THP disable script to rc.local for execution at boot
-    - name: Append THP disable script to /etc/rc.d/rc.local
-      shell: "cat /root/thp_disable >> /etc/rc.d/rc.local"
-      args:
-        executable: /bin/bash
-      backup: yes
-
-    - name: Ensure rc.local is executable
+    - name: Ensure /etc/rc.d/rc.local is executable
       file:
         path: /etc/rc.d/rc.local
         mode: '0755'
@@ -163,9 +152,8 @@
         state: stopped
         enabled: no
 
----
 - name: Disable TCP Checksum Offload on ECS Nodes
-  hosts: ecsmasternodes, ecsnodes
+  hosts: ecs-masters, ecs-workers
   become: yes
   tasks:
 

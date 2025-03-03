@@ -11,16 +11,25 @@
       changed_when: false
       ignore_errors: true  # Avoid failure if IPA is not installed
 
-    - name: Install IPA client if not already installed
-      command: >
-        ipa-client-install --force-join
-        --domain={{ ipaserver_domain }}
-        --server={{ ipaserver_hostname }}
-        --principal={{ ipa_admin_user }}
-        --password={{ ipa_admin_password }}
-      when: ipa_client_check.rc != 0  # Runs only if IPA client is NOT installed
-      register: ipa_client_install_result
-      changed_when: "'Configuration was successful' in ipa_client_install_result.stdout"
+    - name: Derive BaseDN from ipaserver_domain
+      set_fact:
+        basedn: "{{ ipaserver_domain.split('.') | map('regex_replace', '^(.*)$', 'dc=\\1') | join(',') }}"
+
+    - name: Debug inventory hostname
+      debug:
+        msg: "This host is {{ inventory_hostname }}"
+
+    - name: Join IPA in force mode with maximum 5 kinit attempts
+      freeipa.ansible_freeipa.ipaclient_join:
+        servers: ["ipaserver.{{ ipaserver_domain }}"]
+        realm: "{{ ipaserver_realm }}"
+        basedn: "{{ basedn }}"
+        hostname: "{{ inventory_hostname }}"
+        principal: "{{ ipaadmin_principal }}"
+        password: "{{ ipaadmin_password }}"
+        force_join: yes
+        kinit_attempts: 5
+        krb_name: "/tmp/tmpkrb5.conf"
 
     - name: Display installation result
       debug:
