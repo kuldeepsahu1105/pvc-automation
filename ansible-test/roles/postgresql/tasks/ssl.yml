@@ -1,0 +1,13 @@
+- name: Generate SSL certificates for PostgreSQL
+  command: >
+    openssl req -new -x509 -days 365 -nodes
+    -out {{ postgresql_ssl_cert_path }}/server.crt
+    -keyout {{ postgresql_ssl_cert_path }}/server.key
+    -subj "/CN={{ ansible_host }}"
+
+- name: Set permissions for SSL keys
+  file:
+    path: "{{ postgresql_ssl_cert_path }}/server.key"
+    owner: postgres
+    group: postgres
+    mode: "0600"

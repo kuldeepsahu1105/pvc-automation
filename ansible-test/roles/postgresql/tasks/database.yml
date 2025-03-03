@@ -1,0 +1,10 @@
+- name: Ensure PostgreSQL is running
+  service:
+    name: postgresql
+    state: started
+
+- name: Execute SQL script to create users, roles, and databases
+  become_user: postgres
+  postgresql_script:
+    db: postgres
+    path: "/tmp/cloudera-db-setup.sql"

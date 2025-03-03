@@ -1,0 +1,85 @@
+---
+- name: Install and Configure Cloudera Manager
+  hosts: cloudera_manager
+  become: yes
+  vars:
+    db_host: "cldr-mngr.cldrsetup.local"
+    db_port: "5432"
+    db_name: "scm"
+    db_user: "scm"
+    db_password: "scm"
+    ssl_root_cert: "/var/lib/cloudera-scm-server/.postgresql/root.crt"
+    java_package: "java-17-openjdk"
+    cloudera_packages:
+      - cloudera-manager-agent
+      - cloudera-manager-daemons
+      - cloudera-manager-server
+  tasks:
+
+    - name: Install OpenJDK
+      ansible.builtin.dnf:
+        name: "{{ java_package }}"
+        state: present
+
+    - name: Install Cloudera Manager packages
+      ansible.builtin.dnf:
+        name: "{{ cloudera_packages }}"
+        state: present
+
+    - name: Configure Cloudera Manager Agent
+      ansible.builtin.lineinfile:
+        path: /etc/cloudera-scm-agent/config.ini
+        regexp: '^server_host='
+        line: "server_host={{ db_host }}"
+
+    - name: Create PostgreSQL SSL directory
+      ansible.builtin.file:
+        path: /var/lib/cloudera-scm-server/.postgresql
+        state: directory
+        owner: cloudera-scm
+        group: cloudera-scm
+        mode: '0755'
+
+    - name: Copy PostgreSQL root certificate
+      ansible.builtin.copy:
+        src: "/var/lib/pgsql/14/data/root.crt"
+        dest: "{{ ssl_root_cert }}"
+        remote_src: yes
+        owner: cloudera-scm
+        group: cloudera-scm
+        mode: '0644'
+
+    - name: Configure Ranger SSL
+      ansible.builtin.copy:
+        src: /usr/share/java/postgresql-connector-java.jar
+        dest: /opt/cloudera/cm/lib/postgresql-connector.jar
+        remote_src: yes
+
+    - name: Remove existing PostgreSQL connector symlink
+      ansible.builtin.file:
+        path: "/opt/cloudera/cm/lib/postgresql-42.*.jar"
+        state: absent
+
+    - name: Run scm_prepare_database.sh script
+      ansible.builtin.command:
+        cmd: >
+          /opt/cloudera/cm/schema/scm_prepare_database.sh -h{{ db_host }}
+          --jdbc-url "jdbc:postgresql://{{ db_host }}:{{ db_port }}/{{ db_name }}?ssl=true&sslmode=verify-ca&sslrootcert={{ ssl_root_cert }}"
+          postgresql {{ db_name }} {{ db_user }} {{ db_password }} --ssl
+      register: scm_db_output
+      changed_when: "'Successfully connected to database.' in scm_db_output.stdout"
+
+    - name: Enable and Start Cloudera Manager Services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - cloudera-scm-server
+        - cloudera-scm-agent
+
+    - name: Check Cloudera Manager Server Logs
+      ansible.builtin.command:
+        cmd: tail -f /var/log/cloudera-scm-server/cloudera-scm-server.log
+      async: 300
+      poll: 10

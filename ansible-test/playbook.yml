@@ -1,0 +1,6 @@
+- name: Install and Configure PostgreSQL with TLS/SSL for Cloudera Manager
+  hosts: cloudera_manager
+  become: true
+  roles:
+    - postgresql
+    - cloudera_manager

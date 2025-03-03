@@ -1,0 +1,175 @@
+---
+- name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
+  hosts: localhost
+  gather_facts: no
+  vars:
+    cm_host: "cldr-mngr.cldrsetup.local"
+    cm_user: "admin"
+    cm_password: "admin"
+    cluster_name: "CDH-Cluster"
+    cdh_version: "7.1.9"
+    parcel_repo: "https://archive.cloudera.com/cdh7/7.1.9/parcels/"
+    license_file: "/path/to/license.txt"
+    kerberos_principal: "admin/admin@EXAMPLE.COM"
+    kerberos_password: "kerberos_password"
+  tasks:
+    - name: Set Cloudera Manager API base URL
+      ansible.builtin.set_fact:
+        cm_api_url: "http://{{ cm_host }}:7180/api/v48"
+
+    - name: Authenticate with Cloudera Manager API
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/version"
+        method: GET
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: cm_version
+
+    - name: Upload Cloudera Manager License
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/license"
+        method: POST
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: form-multipart
+        body:
+          license: "{{ lookup('file', license_file) | b64encode }}"
+        status_code: 200
+      register: license_upload
+
+    - name: Enable Cloudera Management Services
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/service"
+        method: PUT
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "Cloudera Management Service"
+              type: "MGMT"
+        status_code: 200
+      register: management_services
+
+    - name: Configure AutoTLS
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/config"
+        method: PUT
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "SECURITY_AUTO_TLS"
+              value: "true"
+        status_code: 200
+      register: autotls_config
+
+    - name: Configure Kerberos
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/kerberosConfig"
+        method: PUT
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "KDC_ADMIN_USER"
+              value: "{{ kerberos_principal }}"
+            - name: "KDC_ADMIN_PASSWORD"
+              value: "{{ kerberos_password }}"
+        status_code: 200
+      register: kerberos_config
+
+    - name: Create Cluster
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/clusters/{{ cluster_name }}"
+        method: POST
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "{{ cluster_name }}"
+              version: "CDH{{ cdh_version }}"
+        status_code: 201,409
+      register: cluster_create
+
+    - name: Set Parcel Repository
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/config"
+        method: PUT
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "REMOTE_PARCEL_REPO_URLS"
+              value: "{{ parcel_repo }}"
+        status_code: 200
+      register: parcel_repo_set
+
+    - name: Download and Distribute Parcel
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/parcels/products/CDH/versions/{{ cdh_version }}/commands/startDistribution"
+        method: POST
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: parcel_distribution
+
+    - name: Activate Parcel
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/parcels/products/CDH/versions/{{ cdh_version }}/commands/activate"
+        method: POST
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: parcel_activation
+
+    - name: Install Base Cluster Services
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/services"
+        method: POST
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "HDFS"
+              type: "HDFS"
+            - name: "YARN"
+              type: "YARN"
+            - name: "Hive"
+              type: "HIVE"
+            - name: "Ranger"
+              type: "RANGER"
+            - name: "Atlas"
+              type: "ATLAS"
+            - name: "Zookeeper"
+              type: "ZOOKEEPER"
+            - name: "Kafka"
+              type: "KAFKA"
+            - name: "HBase"
+              type: "HBASE"
+            - name: "Phoenix"
+              type: "PHOENIX"
+            - name: "Impala"
+              type: "IMPALA"
+            - name: "Tez"
+              type: "TEZ"
+            - name: "Hive-on-Tez"
+              type: "HIVE_ON_TEZ"
+        status_code: 200
+      register: service_installation

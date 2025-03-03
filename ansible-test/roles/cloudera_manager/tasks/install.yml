@@ -1,0 +1,10 @@
+- name: Install Cloudera Manager
+  package:
+    name: cloudera-manager-server
+    state: present
+
+- name: Ensure Cloudera Manager service is enabled and started
+  service:
+    name: cloudera-scm-server
+    state: started
+    enabled: true

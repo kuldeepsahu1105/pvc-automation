@@ -1,0 +1,10 @@
+- name: Install PostgreSQL
+  package:
+    name: "{{ postgresql_packages }}"
+    state: present
+
+- name: Ensure PostgreSQL service is enabled and started
+  service:
+    name: postgresql
+    state: started
+    enabled: true
