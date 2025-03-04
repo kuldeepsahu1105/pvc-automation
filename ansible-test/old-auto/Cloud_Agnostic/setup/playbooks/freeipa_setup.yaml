@@ -1,0 +1,24 @@
+---
+  - name: FREEIPA Server Setup
+    hosts: ipaserver
+    become: yes
+    become_user: root
+    tasks:
+      - name: install IPA server packages
+        yum:
+          name:
+           - ipa-server 
+           - bind 
+           - bind-dyndb-ldap 
+           - ipa-server-dns 
+           - firewalld
+           
+      - name: Set Hostname to freeipa
+        hostname:
+          name: "ipaserver.cdppvcpoc.com"
+
+      - name: Add host mapping
+        shell: echo "$(hostname -i) ipaserver.cdppvcpoc.com" >> /etc/hosts
+
+      - name: Reboot the FreeIPA server
+        ansible.builtin.reboot:

@@ -1,0 +1,11 @@
+---
+- name: Install Cloudera PVC Base
+  yum:
+    name: "https://archive.cloudera.com/pvc-base/7.3.4/cloudera-pvc-base-7.3.4-1.el7.x86_64.rpm"
+    state: present
+
+- name: Start Cloudera PVC Base
+  service:
+    name: cloudera-pvc-base
+    state: started
+    enabled: yes

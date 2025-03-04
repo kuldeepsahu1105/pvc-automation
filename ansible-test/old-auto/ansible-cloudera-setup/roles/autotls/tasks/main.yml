@@ -1,0 +1,10 @@
+---
+- name: Configure AutoTLS
+  template:
+    src: autotls-config.j2
+    dest: /etc/cloudera-scm-server/autotls-config.properties
+
+- name: Restart Cloudera Manager Server
+  service:
+    name: cloudera-scm-server
+    state: restarted

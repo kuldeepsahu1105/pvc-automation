@@ -1,0 +1,15 @@
+---
+  - name: Cluster tasks for setting hostname
+    hosts: cluster
+    become: yes
+    gather_facts: True
+    vars:
+      hostnames: 
+        - pvcmaster.cdppvcpoc.com
+        - pvcworker1.cdppvcpoc.com
+        - pvcworker2.cdppvcpoc.com
+        - pvcworker3.cdppvcpoc.com
+    tasks:
+    - name: Set Hostname to all the base nodes
+      hostname:
+        name: "{{ hostnames[groups.cluster.index(inventory_hostname)] }}"

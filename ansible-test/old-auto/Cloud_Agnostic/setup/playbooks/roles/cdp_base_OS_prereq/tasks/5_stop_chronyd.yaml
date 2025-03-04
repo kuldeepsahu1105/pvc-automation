@@ -1,0 +1,7 @@
+---
+      - name: Stop chronyd since running ntpd
+        ansible.builtin.service:
+          name: chronyd
+          state: stopped
+          enabled: false
+        ignore_errors: true

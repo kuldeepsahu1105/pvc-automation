@@ -1,0 +1,30 @@
+---
+- name: Install Ansible Collections using ansible_galaxy
+  hosts: localhost
+  tasks:
+    - name: Install community.general collection
+      community.general.ansible_galaxy:
+        name: freeipa.ansible_freeipa
+        state: present  # state can be 'present' or 'absent' for installation/uninstallation
+
+---
+- name: Playbook to configure IPA servers
+  hosts: ipaserver
+  become: true
+  vars_files:
+  - playbook_sensitive_data.yml
+
+  roles:
+  - role: ipaserver
+    state: present
+
+---
+- name: Playbook to configure IPA servers
+  hosts: all:!ipaserver
+  become: true
+  vars_files:
+  - playbook_sensitive_data.yml
+
+  roles:
+  - role: ipaclient
+    state: present

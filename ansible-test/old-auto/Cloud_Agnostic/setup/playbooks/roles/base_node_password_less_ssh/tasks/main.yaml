@@ -1,0 +1,24 @@
+---
+      - name: Copy the id_rsa.pub file from master to other hosts
+        copy:
+         src=/root/.ssh/id_rsa.pub
+         dest=/tmp/id_rsa.pub
+      - name: Copy the cdp_id_rsa.pub file from master to other hosts
+        copy:
+         src=/root/.ssh/cdp_id_rsa.pub
+         dest=/tmp/cdp_id_rsa.pub
+      - name: check .ssh directory exists on the workers
+        stat:
+         path: "/root/.ssh"
+        register: ssh_directory_exists_check
+      - name: create ~/.ssh directory if not present
+        file:
+          path: "/root/.ssh"
+          state: directory
+          mode: "0700"
+        register: ssh_directory_creation
+        when: ssh_directory_exists_check is defined and ssh_directory_exists_check.stat.exists == false
+      - name: Update authorized_keys with id_rsa.pub public key
+        shell: cat /tmp/id_rsa.pub >> /root/.ssh/authorized_keys
+      - name: Update authorized_keys with cdp_id_rsa.pub public key
+        shell: cat /tmp/cdp_id_rsa.pub >> /root/.ssh/authorized_keys

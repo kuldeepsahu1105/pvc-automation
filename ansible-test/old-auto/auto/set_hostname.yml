@@ -1,0 +1,8 @@
+---
+- name: Set hostname to IP address
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set system hostname to IP address
+      hostname:
+        name: "{{ ansible_host }}"

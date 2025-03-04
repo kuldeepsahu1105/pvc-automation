@@ -1,0 +1,11 @@
+---
+      - name: Set swappiness to 1
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/sysctl.conf
+          regexp='^#?vm.swappiness'
+          line='vm.swappiness=1'
+
+      - name: Set swappiness to 1
+        shell: sysctl -p

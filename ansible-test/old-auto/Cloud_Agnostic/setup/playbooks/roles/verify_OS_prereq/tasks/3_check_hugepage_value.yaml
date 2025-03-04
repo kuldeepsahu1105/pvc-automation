@@ -1,0 +1,10 @@
+---
+      - name: Verify enabled hugepage value
+        shell: cat /sys/kernel/mm/transparent_hugepage/enabled
+        register: enabled_hugepage_value
+      - debug: var=enabled_hugepage_value.stdout_lines      
+
+      - name: Verify defrag hugepage value
+        shell: cat /sys/kernel/mm/transparent_hugepage/defrag
+        register: defrag_hugepage_value
+      - debug: var=defrag_hugepage_value.stdout_lines

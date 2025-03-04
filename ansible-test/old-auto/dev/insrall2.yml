@@ -1,0 +1,65 @@
+---
+- name: Setup environment
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set static hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+        static: yes
+
+    - name: Update /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+      with_items: "{{ hostvars | dict2items }}"
+      vars:
+        etc_hosts_entries:
+          - "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4"
+          - "::1 localhost localhost.localdomain localhost6 localhost6.localdomain6"
+          - "{{ ansible_host }} {{ inventory_hostname }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.key != 'localhost'
+
+    - name: Update /etc/resolv.conf
+      template:
+        src: resolv.conf.j2
+        dest: /etc/resolv.conf
+
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+
+    - name: Configure transparent hugepages
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl:
+          - name: "{{ item.name }}"
+            value: "{{ item.value }}"
+        with_items:
+          - { name: "vm.nr_hugepages", value: 0 }
+
+    - name: Install Python 3.9
+      apt:
+        name: python3.9
+        state: present
+
+    - name: Manage Firewalls
+      firewalld:
+        state: disabled
+
+    - name: Disable IPv6
+      sysctl:
+        name: net.ipv6.conf.all.disable_ipv6
+        value: 1
+        sysctl:
+          - name: net.ipv6.conf.all.disable_ipv6
+            value: 1
+
+    - name: Install psycopg2-binary
+      pip:
+        name: psycopg2-binary
+        state: present
+

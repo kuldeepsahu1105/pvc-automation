@@ -1,0 +1,22 @@
+---
+      - name: update hugepage value for enabled
+        shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+      - name: update hugepage value for defrag
+        shell: echo never > /sys/kernel/mm/transparent_hugepage/defrag
+
+      - name: update hugepage value for enabled for reboot
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/rc.d/rc.local
+          regexp='^#?transparent_hugepage/enabled'
+          line='echo never > /sys/kernel/mm/transparent_hugepage/enabled'
+
+      - name: update hugepage value for defrag for reboot
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/rc.d/rc.local
+          regexp='^#?transparent_hugepage/defrag'
+          line='echo never > /sys/kernel/mm/transparent_hugepage/defrag'

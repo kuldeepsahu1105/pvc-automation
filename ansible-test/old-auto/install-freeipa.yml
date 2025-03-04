@@ -1,0 +1,20 @@
+---
+- name: Install FreeIPA Server
+  hosts: freeipa-servers
+  become: yes
+  tasks:
+    - name: Install required packages
+      package:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - epel-release
+        - freeipa-server
+        - bind-dyndb-ldap
+
+    - name: Configure FreeIPA server
+      command: ipa-server-install -U --ds-password={{ freeipa_ds_password }} --admin-password={{ freeipa_admin_password }}
+      args:
+        creates: /etc/ipa/default.conf
+      environment:
+        KRB5_TRACE: "/dev/stdout"  # Optional: Enable Kerberos debug traces for troubleshooting

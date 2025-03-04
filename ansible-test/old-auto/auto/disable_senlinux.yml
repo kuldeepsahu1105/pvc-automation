@@ -1,0 +1,30 @@
+---
+- name: Disable SELinux, reboot, and verify status
+  hosts: all
+  become: true  # To ensure commands run with sudo privileges
+  tasks:
+    - name: Disable SELinux permanently
+      ansible.builtin.selinux:
+        policy: targeted
+        state: disabled  # You can set to 'permissive' instead of 'disabled' if needed
+      notify:
+        - Reboot the machine
+
+    - name: Reboot the machine to apply changes
+      ansible.builtin.reboot:
+        reboot_timeout: 600  # Wait for the machine to reboot (600 seconds)
+        test_command: whoami  # Command to test if the machine is up and responsive
+
+    - name: Wait for the machine to come back up and verify SELinux status
+      ansible.builtin.command:
+        cmd: getenforce
+      register: selinux_status
+      until: selinux_status.stdout in ['Disabled', 'Permissive']
+      retries: 5  # Retry 5 times
+      delay: 30  # Delay between retries (in seconds)
+      ignore_errors: yes  # If the command fails in the beginning (due to reboot), retry
+
+    - name: Print SELinux status
+      ansible.builtin.debug:
+        msg: "SELinux is set to: {{ selinux_status.stdout }}"
+

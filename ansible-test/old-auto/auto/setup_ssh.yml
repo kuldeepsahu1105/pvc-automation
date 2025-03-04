@@ -1,0 +1,45 @@
+---
+- name: Setup SSH Key Pair and Passwordless SSH
+  hosts: ipaserver  # Only run this part on the ipaserver where the keypair will be generated
+  become: yes
+  tasks:
+    - name: Generate SSH key pair on ipaserver (if not already exists)
+      ansible.builtin.openssh_keypair:
+        path: "/root/.ssh/id_rsa"
+        size: 2048
+        type: rsa
+        comment: "ansible_generated_key"
+        mode: "0600"
+      when: ansible_facts['ansible_user'] == "root"  # Ensure it runs only for the root user
+    
+    - name: Copy the public key to all hosts
+      ansible.builtin.copy:
+        src: "/root/.ssh/id_rsa.pub"  # Public key file
+        dest: "/tmp/id_rsa.pub"
+        mode: "0600"
+    
+- name: Setup SSH on all hosts (for passwordless login)
+  hosts: all  # This will run on all hosts, including ipaserver and all workers
+  become: yes
+  tasks:
+    - name: Ensure .ssh directory exists on all machines
+      ansible.builtin.file:
+        path: "/root/.ssh"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+    
+    - name: Append public key to authorized_keys file on all machines
+      ansible.builtin.authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('file', '/tmp/id_rsa.pub') }}"
+        path: "/root/.ssh/authorized_keys"
+    
+    - name: Ensure correct permissions on authorized_keys file on all machines
+      ansible.builtin.file:
+        path: "/root/.ssh/authorized_keys"
+        owner: root
+        group: root
+        mode: "0600"

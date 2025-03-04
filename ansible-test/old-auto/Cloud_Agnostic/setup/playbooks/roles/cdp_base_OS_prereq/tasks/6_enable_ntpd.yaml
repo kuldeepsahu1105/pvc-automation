@@ -1,0 +1,6 @@
+---
+      - name: Enable and run ntpd
+        ansible.builtin.service:
+          name: ntpd
+          enabled: true          
+          state: restarted

@@ -1,0 +1,23 @@
+= CDP Private Cloud Setup
+
+This document provides all the required information for Cloudera Partners to setup and install CDP Private Cloud on their On-Prem Infrastructure. In addition to exploring the benefits of CDP Private Cloud with its rich Data Services, this setup can also be used for *ISV/IHV* certification, getting a Hands-on experience, or for any demos with potential customers. 
+
+== Introduction
+
+Cloudera Data Platform is a single platform that has two form factors CDP Public and CDP Private cloud. 
+
+*CDP Public Cloud* is an integrated analytics and data management platform deployed on *cloud services*. It consists of a number of cloud services designed to address specific enterprise data cloud use cases.
+This includes Data Hub powered by Cloudera Runtime, self-service experiences (Data Warehouse, Machine Learning, and Data Engineering) running on containers, the administrative layer (Management Console), and SDX services (Data Lake, Data Catalog, Replication Manager, and Workload Manager).
+
+*CDP Private Cloud* is an integrated analytics and data management platform deployed in *private data centers*. It consists of CDP Private Cloud Base and CDP Private Cloud Data Services and offers broad data analytics and artificial intelligence functionality along with secure user access and data governance features. CDP Private Cloud (PvC) data services components run on containerized cluster and thus requires a container orchestration engine to manage all the workloads. CDP PvC offers installation with two orchestration engines. 
+
+* *Openshift Container Platform*
+
+* *Embedded Container Service (Cloudera managed)*
+
+In this document, we focus on CDP Private Cloud setup with *ECS*. 
+
+For setting CDP PvC on AWS infrastructure(EC2), please click on xref:AWS_Infrastructure/Readme.adoc[AWS Infrastructure]. 
+
+For setting CDP PvC on any Virtualized Infrastructure/On-Prem, please click on xref:Cloud_Agnostic/Readme.adoc[On-Prem/Virtualized]. 
+

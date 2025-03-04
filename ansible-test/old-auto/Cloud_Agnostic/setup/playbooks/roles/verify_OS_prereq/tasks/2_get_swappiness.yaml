@@ -1,0 +1,5 @@
+---
+      - name: Verify swappiness value
+        shell: sysctl vm.swappiness
+        register: swappiness_status
+      - debug: var=swappiness_status.stdout_lines      

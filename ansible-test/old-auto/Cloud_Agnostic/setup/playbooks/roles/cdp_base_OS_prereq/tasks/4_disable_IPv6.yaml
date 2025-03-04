@@ -1,0 +1,38 @@
+---
+      - name: update rc.local to disable ipv6 - 1
+        shell: sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: update rc.local to disable ipv6 - 2
+        shell: sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
+      - name: update rc.local to disable ipv6 - 3
+        shell: sysctl -w net.ipv6.conf.lo.disable_ipv6=0
+
+      - name: update rc.local to disable ipv6 - 1
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/rc.d/rc.local
+          regexp='^#?net.ipv6.conf.all.disable_ipv6'
+          line='sysctl -w net.ipv6.conf.all.disable_ipv6=1'
+
+      - name: update rc.local to disable ipv6 - 2
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/rc.d/rc.local
+          regexp='^#?net.ipv6.conf.default.disable_ipv6'
+          line='sysctl -w net.ipv6.conf.default.disable_ipv6=1'
+
+      - name: update rc.local to disable ipv6 - 3
+        lineinfile:
+          backup=yes
+          state=present
+          dest=/etc/rc.d/rc.local
+          regexp='^#?net.ipv6.conf.lo.disable_ipv6'
+          line='sysctl -w net.ipv6.conf.lo.disable_ipv6=0'
+
+      - name: Add execute permission to /etc/rc.d/rc.local
+        file:
+          dest: /etc/rc.d/rc.local
+          mode: a+x

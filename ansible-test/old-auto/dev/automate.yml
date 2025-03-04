@@ -1,0 +1,146 @@
+---
+- name: Setup and Configure Cluster Nodes
+  hosts: all  # Adjust this to your actual inventory group
+
+  tasks:
+    - name: Install required packages on IPA server
+      ansible.builtin.yum:
+        name:
+          - ipa-server
+          - ipa-server-dns
+          - ipa-server-trust-ad
+        state: present
+      when: "'ipaserver' in group_names"
+
+    - name: Install FreeIPA client and openldap-clients on all nodes
+      ansible.builtin.yum:
+        name:
+          - ipa-client
+          - openldap-clients
+        state: present
+      when: "'ipaserver' not in group_names"
+
+    - name: Copy /etc/resolv.conf to each node
+      ansible.builtin.copy:
+        src: /etc/resolv.conf
+        dest: /etc/resolv.conf
+
+    - name: Copy /etc/sysconfig/network to each node
+      ansible.builtin.copy:
+        src: /etc/sysconfig/network
+        dest: /etc/sysconfig/network
+
+    - name: Enable permissions for HDFS and PAM Authentication
+      ansible.builtin.shell:
+        cmd: "chmod 1777 /tmp && chmod 444 /etc/shadow"
+
+    - name: Verify forward and reverse DNS lookup from IPA Server
+      ansible.builtin.shell:
+        cmd: "nslookup {{ item }}"
+      loop:
+        - cldr-mngr.cdppvcds.com
+        - console-cdp.apps.cdppvcds.com
+        - $(hostname -f)
+        - $(hostname -i)
+      register: dns_lookup_result
+      delegate_to: ipaserver
+
+    - name: Ensure forward DNS lookup is correct
+      ansible.builtin.debug:
+        msg: "{{ dns_lookup_result.stdout_lines }}"
+      when: "'ANSWER' in item"
+      loop: "{{ dns_lookup_result.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Configure wildcard DNS record on IPA Server
+      ansible.posix.ipa_dnsrecord:
+        zone: cdppvcds.com
+        name: "*.apps"
+        type: A
+        address: 172.31.30.239
+        state: present
+      when: "'ipaserver' in group_names"
+
+    - name: Download and copy PostgreSQL JDBC driver to all nodes
+      ansible.builtin.get_url:
+        url: https://jdbc.postgresql.org/download/postgresql-42.7.3.jar
+        dest: /usr/share/java/postgresql-connector-java.jar
+
+    - name: Set firewall rules for necessary ports
+      ansible.builtin.firewalld:
+        port: "{{ item }}"
+        permanent: yes
+        state: enabled
+      loop:
+        - "80/tcp"
+        - "443/tcp"
+        - "389/tcp"
+        - "636/tcp"
+        - "88/tcp"
+        - "464/tcp"
+        - "53/tcp"
+        - "88/udp"
+        - "464/udp"
+        - "53/udp"
+        - "123/udp"
+        - "749/tcp"
+        - "749/udp"
+      when: "'ipaserver' in group_names"
+
+    - name: Disable SELinux on all nodes
+      ansible.builtin.selinux:
+        policy: targeted
+        state: disabled
+
+    - name: Set ulimit settings on all nodes
+      ansible.builtin.copy:
+        src: /etc/security/limits.conf
+        dest: /etc/security/limits.conf
+
+    - name: Copy PAM configuration to all nodes
+      ansible.builtin.copy:
+        src: /etc/pam.d/su
+        dest: /etc/pam.d/su
+
+    - name: Adjust TCP retries on all nodes
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        line: "{{ item }}"
+        insertafter: EOF
+      loop:
+        - "net.ipv4.tcp_retries2=5"
+        - "net.ipv6.conf.all.disable_ipv6 = 1"
+        - "net.ipv6.conf.default.disable_ipv6 = 1"
+        - "net.ipv6.conf.lo.disable_ipv6 = 0"
+
+    - name: Apply sysctl changes on all nodes
+      ansible.builtin.sysctl:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "net.ipv4.tcp_retries2"
+        - "net.ipv6.conf.all.disable_ipv6"
+        - "net.ipv6.conf.default.disable_ipv6"
+        - "net.ipv6.conf.lo.disable_ipv6"
+
+    - name: Disable Transparent Huge Pages on all nodes
+      ansible.builtin.shell:
+        cmd:
+          - "echo never > /sys/kernel/mm/transparent_hugepage/enabled"
+          - "echo never > /sys/kernel/mm/transparent_hugepage/defrag"
+
+    - name: Disable tuned service on all nodes
+      ansible.builtin.systemd:
+        name: tuned
+        state: stopped
+        enabled: no
+
+    - name: Install iptables and nfs-utils on ECS nodes
+      ansible.builtin.yum:
+        name:
+          - iptables
+          - nfs-utils
+          - iscsi-initiator-utils
+        state: present
+      when: "'ecsmasternodes' in group_names or 'ecsnodes' in group_names"

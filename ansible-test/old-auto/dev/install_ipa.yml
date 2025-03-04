@@ -1,0 +1,23 @@
+---
+- name: Install FreeIPA Server Packages
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install FreeIPA server packages on ipaserver
+      ansible.builtin.yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ipa-server
+        - ipa-server-dns
+        - ipa-server-trust-ad
+      when: inventory_hostname in groups['ipaserver']
+
+    - name: Install FreeIPA client and OpenLDAP clients
+      ansible.builtin.yum:
+        name:
+          - ipa-client
+          - openldap-clients
+        state: present
+      when: inventory_hostname not in groups['ipaserver']

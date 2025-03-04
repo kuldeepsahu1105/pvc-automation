@@ -1,0 +1,22 @@
+---
+- name: Install Kerberos
+  yum:
+    name: krb5-server
+    state: present
+
+- name: Configure Kerberos
+  template:
+    src: krb5.conf.j2
+    dest: /etc/krb5.conf
+
+- name: Start Kerberos KDC
+  service:
+    name: krb5kdc
+    state: started
+    enabled: yes
+
+- name: Start Kerberos Admin Server
+  service:
+    name: kadmin
+    state: started
+    enabled: yes

@@ -1,0 +1,80 @@
+---
+- name: Install and configure FreeIPA and prerequisites
+  hosts: all
+  become: true
+  tasks:
+    - name: Set static hostname on each node
+      hostname:
+        name: "{{ inventory_hostname }}.cdppvcds.com"
+        static: yes
+
+    - name: Update and install base packages
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - python3
+        - python3-pip
+        - net-tools
+        - bind-utils
+        - wget
+        - traceroute
+        - nc
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        state: latest
+
+    - name: Install specific Python version if needed
+      command: "{{ item }}"
+      with_items:
+        - "dnf -y install python3.9"  # Adjust as per your requirements
+
+    - name: Configure /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          127.0.0.1 localhost
+          ::1 localhost ip6-localhost ip6-loopback
+          172.31.24.240 ipaserver.cdppvcds.com ipaserver
+          172.31.27.139 cldr-mngr.cdppvcds.com cldr-mngr
+          172.31.21.104 pvcbase-master.cdppvcds.com pvcbase-master
+          # Add all other hosts similarly
+
+    - name: Ensure Python dependencies are installed
+      pip:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - psycopg2-binary  # Example package, adjust as needed
+
+    - name: Remove chrony service
+      systemd:
+        name: chronyd
+        state: stopped
+        enabled: no
+
+    - name: Install FreeIPA packages
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ipa-server
+        - bind
+        - bind-dyndb-ldap
+        - ipa-server-dns
+        - firewalld
+
+    - name: Run ipa-server-install command
+      command: ipa-server-install --setup-dns --unattended
+      args:
+        creates: /etc/ipa/default.conf
+      environment:
+        KRB5_TRACE: "/dev/stdout"
+      register: ipa_install_output
+
+    - name: Print ipa-server-install output
+      debug:
+        msg: "{{ ipa_install_output.stdout_lines }}"
+

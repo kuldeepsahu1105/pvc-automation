@@ -1,0 +1,167 @@
+---
+- name: Configure system settings for all hosts
+  hosts: all
+  become: yes
+  vars:
+    postgresql_jdbc_url: "https://jdbc.postgresql.org/download/postgresql-42.7.3.jar"
+    postgresql_jdbc_filename: "postgresql-42.7.3.jar"
+    postgresql_jdbc_dest: "/usr/share/java/postgresql-connector-java.jar"
+    sysctl_file: "/etc/sysctl.conf"
+    thp_disable_file: "/root/thp_disable"
+    network_interface: "eth0"  # Replace with the actual network interface name
+
+  tasks:
+
+    # Step 1: Download and copy PostgreSQL JDBC driver
+    - name: Download PostgreSQL JDBC driver
+      get_url:
+        url: "{{ postgresql_jdbc_url }}"
+        dest: "/root/{{ postgresql_jdbc_filename }}"
+        mode: '0644'
+
+    - name: Copy PostgreSQL JDBC driver to all hosts
+      copy:
+        src: "/root/{{ postgresql_jdbc_filename }}"
+        dest: "{{ postgresql_jdbc_dest }}"
+        mode: '0644'
+
+    # Step 2: Disable the Linux Firewall
+    - name: Open port 80 for HTTP traffic
+      command: firewall-cmd --zone=public --add-port=80/tcp --permanent
+
+    - name: Open port 443 for HTTPS traffic
+      command: firewall-cmd --zone=public --add-port=443/tcp --permanent
+
+    - name: Reload firewall settings
+      command: firewall-cmd --reload
+
+    - name: Disable and stop firewalld service
+      systemd:
+        name: firewalld
+        state: stopped
+        enabled: no
+
+    # Step 3: Disable SELinux
+    - name: Disable SELinux in /etc/selinux/config
+      replace:
+        path: /etc/selinux/config
+        regexp: 'SELINUX=enforcing'
+        replace: 'SELINUX=disabled'
+
+    - name: Set SELinux to permissive immediately
+      command: setenforce 0
+
+    - name: Verify SELinux status
+      command: getenforce
+
+    # Step 4: Enable Syslog
+    - name: Check if rsyslog is installed
+      command: rsyslogd -v
+      ignore_errors: yes
+
+    - name: Ensure rsyslog service is running
+      service:
+        name: rsyslog
+        state: started
+        enabled: yes
+
+    # Step 5: Set ulimit values
+    - name: Update /etc/security/limits.conf to increase nofile limit
+      lineinfile:
+        path: /etc/security/limits.conf
+        line: "* soft nofile 1048576"
+        create: yes
+
+    - name: Copy /etc/security/limits.conf to all hosts
+      copy:
+        src: /etc/security/limits.conf
+        dest: /etc/security/limits.conf
+
+    - name: Copy /etc/pam.d/su to all hosts
+      copy:
+        src: /etc/pam.d/su
+        dest: /etc/pam.d/su
+
+    # Step 6: Set TCP Retries
+    - name: Update /etc/sysctl.conf for tcp_retries2
+      lineinfile:
+        path: "{{ sysctl_file }}"
+        line: "net.ipv4.tcp_retries2=5"
+        create: yes
+
+    - name: Copy /etc/sysctl.conf to all hosts
+      copy:
+        src: "{{ sysctl_file }}"
+        dest: "{{ sysctl_file }}"
+
+    # Step 7: Disable IPv6 Defaults
+    - name: Disable IPv6 on all hosts
+      shell: |
+        echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+        echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+        echo "net.ipv6.conf.lo.disable_ipv6 = 0" >> /etc/sysctl.conf
+      when: inventory_hostname not in ['ecsmasternodes', 'ecsnodes']
+
+    # Step 8: Disable Swapping
+    - name: Set vm.swappiness=1
+      lineinfile:
+        path: "{{ sysctl_file }}"
+        line: "vm.swappiness=1"
+        create: yes
+
+    # Step 9: Disable Memory Overcommit
+    - name: Set vm.overcommit_memory=0
+      lineinfile:
+        path: "{{ sysctl_file }}"
+        line: "vm.overcommit_memory=0"
+        create: yes
+
+    # Step 10: Reload sysctl settings
+    - name: Reload sysctl settings
+      command: sysctl -p
+
+    # Step 11: Disable Transparent Huge Pages (THP)
+    - name: Disable Transparent Huge Pages for all hosts
+      shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+      ignore_errors: yes
+
+    - name: Disable Transparent Huge Pages defrag for all hosts
+      shell: echo never > /sys/kernel/mm/transparent_hugepage/defrag
+      ignore_errors: yes
+
+    # Step 12: Copy thp_disable commands to all hosts
+    - name: Create thp_disable file with necessary commands
+      copy:
+        content: |
+          echo never > /sys/kernel/mm/transparent_hugepage/enabled
+          echo never > /sys/kernel/mm/transparent_hugepage/defrag
+          sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sysctl -w net.ipv6.conf.default.disable_ipv6=1
+          sysctl -w net.ipv6.conf.lo.disable_ipv6=0
+        dest: "{{ thp_disable_file }}"
+
+    - name: Copy thp_disable file to all nodes
+      copy:
+        src: "{{ thp_disable_file }}"
+        dest: "{{ thp_disable_file }}"
+
+    - name: Append thp_disable file commands to /etc/rc.d/rc.local
+      shell: cat {{ thp_disable_file }} >> /etc/rc.d/rc.local
+
+    - name: Make rc.local executable
+      file:
+        path: /etc/rc.d/rc.local
+        mode: '0755'
+
+    # Step 13: Disable tuned service
+    - name: Disable tuned service
+      systemd:
+        name: tuned
+        state: stopped
+        enabled: no
+
+    # Step 14: Disable TCP Checksum Offload
+    - name: Disable TCP checksum offload on network interface
+      shell: ethtool -K {{ network_interface }} tx off
+      when: inventory_hostname in ['ecsmasternodes', 'ecsnodes']
+

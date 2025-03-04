@@ -1,0 +1,21 @@
+---
+- name: Install Cloudera Manager
+  yum:
+    name: "https://archive.cloudera.com/cm7/redhat7/x86_64/cm/7.3.4/cloudera-manager-agent-7.3.4-1.cm7.x86_64.rpm"
+    state: present
+
+- name: Install Cloudera Manager Server
+  yum:
+    name: "https://archive.cloudera.com/cm7/redhat7/x86_64/cm/7.3.4/cloudera-manager-server-7.3.4-1.cm7.x86_64.rpm"
+    state: present
+
+- name: Configure Cloudera Manager
+  template:
+    src: cloudera-manager.properties.j2
+    dest: /etc/cloudera-scm-server/db.properties
+
+- name: Start Cloudera Manager Server
+  service:
+    name: cloudera-scm-server
+    state: started
+    enabled: yes

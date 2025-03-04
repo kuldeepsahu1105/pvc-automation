@@ -1,0 +1,8 @@
+---
+       - include: ./1_disable_selinux.yaml
+       - include: ./2_set_swappiness.yaml
+       - include: ./3_hugepage_value.yaml
+       - include: ./4_disable_IPv6.yaml
+       - include: ./5_stop_chronyd.yaml
+       - include: ./6_enable_ntpd.yaml
+       - include: ./7_stop_firewalld.yaml

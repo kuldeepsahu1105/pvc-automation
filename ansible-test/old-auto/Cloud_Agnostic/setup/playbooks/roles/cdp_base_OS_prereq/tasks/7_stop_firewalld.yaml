@@ -1,0 +1,7 @@
+---
+      - name: Stop firewalld
+        ansible.builtin.service:
+          name: firewalld
+          state: stopped
+          enabled: false
+        ignore_errors: true

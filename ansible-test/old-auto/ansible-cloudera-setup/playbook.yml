@@ -1,0 +1,42 @@
+---
+- name: Setup Cloudera Environment
+  hosts: all
+  become: yes
+  vars:
+    cloudera_manager_version: "7.3.4"
+    cloudera_pvc_version: "7.3.4"
+    repo_url: "https://your-private-repo-url"
+    nginx_port: 80
+    kerberos_realm: "EXAMPLE.COM"
+    kerberos_admin_server: "krb-admin.example.com"
+    auto_tls_cert_path: "/path/to/cert"
+    auto_tls_key_path: "/path/to/key"
+    
+  roles:
+    - role: private_repo
+      vars:
+        repo_url: "{{ repo_url }}"
+
+    - role: nginx
+      vars:
+        nginx_port: "{{ nginx_port }}"
+
+    - role: cloudera_manager
+      vars:
+        cloudera_manager_version: "{{ cloudera_manager_version }}"
+        repo_url: "{{ repo_url }}"
+
+    - role: cloudera_pvc_base
+      vars:
+        cloudera_pvc_version: "{{ cloudera_pvc_version }}"
+        repo_url: "{{ repo_url }}"
+
+    - role: kerberos
+      vars:
+        kerberos_realm: "{{ kerberos_realm }}"
+        kerberos_admin_server: "{{ kerberos_admin_server }}"
+
+    - role: autotls
+      vars:
+        auto_tls_cert_path: "{{ auto_tls_cert_path }}"
+        auto_tls_key_path: "{{ auto_tls_key_path }}"

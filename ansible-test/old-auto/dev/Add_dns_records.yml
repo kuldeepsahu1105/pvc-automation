@@ -1,0 +1,10 @@
+---
+- name: Add DNS records for {{ group_info.group_name }} group
+  community.general.ipa_dnsrecord:
+    zone: "{{ dns_zone }}"
+    name: "{{ item }}"
+    type: A
+    address: "{{ hostvars[item].ip_addr }}"
+    state: present
+  loop: "{{ groups[group_info.group_name] }}"
+  when: groups[group_info.group_name] | length > 0

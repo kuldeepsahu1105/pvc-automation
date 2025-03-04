@@ -1,0 +1,84 @@
+---
+- name: Setup Node.js Application
+  hosts: all
+  become: yes
+  vars:
+    node_version: "22.6.0"
+    repo_url: "https://github.com/freeipa/freeipa-webui.git"
+    app_dir: "/opt/freeipa-webui"
+    app_name: "freeipa_webui"
+
+  tasks:
+    - name: Install dependencies
+      package:
+        name:
+          - git
+          - curl
+        state: present
+
+    - name: Install Node Version Manager (NVM)
+      shell: |
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+        nvm install {{ node_version }}
+        nvm alias default {{ node_version }}
+        nvm use default
+      environment:
+        HOME: "/root"
+        NVM_DIR: "/root/.nvm"
+      args:
+        creates: "/root/.nvm"
+
+    - name: Clone repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: master
+
+    - name: Install npm dependencies
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/npm install
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Fix npm audit issues
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/npm audit fix
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Build the project
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/npm run build
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Install pm2 globally
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/npm install -g pm2
+
+    - name: Start application with pm2
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/pm2 start npm --name "{{ app_name }}" -- start
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Save pm2 process list
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/pm2 save
+
+    - name: Ensure pm2 starts on boot
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/pm2 startup
+
+    - name: Run application using pm2
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/pm2 restart "{{ app_name }}"
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Check pm2 status
+      command: >
+        /root/.nvm/versions/node/v{{ node_version }}/bin/pm2 list

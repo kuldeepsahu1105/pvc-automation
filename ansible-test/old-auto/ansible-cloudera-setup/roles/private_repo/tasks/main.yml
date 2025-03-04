@@ -1,0 +1,8 @@
+---
+- name: Configure Private Repo
+  yum_repository:
+    name: cloudera-private-repo
+    description: Cloudera Private Repository
+    baseurl: "{{ repo_url }}"
+    gpgcheck: 0
+    enabled: 1
