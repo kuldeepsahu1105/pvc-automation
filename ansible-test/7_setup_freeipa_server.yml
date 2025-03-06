@@ -103,4 +103,4 @@
         name: firewalld
         state: disabled
         enabled: false
-      ignore_errors: true
+      failed_when: false

@@ -15,11 +15,11 @@
       command: dnf config-manager --set-enabled appstream
       when: ansible_distribution == "CentOS"
 
-    - name: Enable EPEL Repository (for RHEL & CentOS)
-      dnf:
-        name: epel-release
-        state: present
-      when: ansible_os_family == "RedHat"
+    # - name: Enable EPEL Repository (for RHEL & CentOS)
+    #   dnf:
+    #     name: epel-release
+    #     state: present
+    #   when: ansible_os_family == "RedHat"
 
     - name: Install necessary packages
       dnf:
