@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 5_prereq_setup_002.yml
 ---
 - name: Configure Syslog, Ulimit, and System Settings
   hosts: all

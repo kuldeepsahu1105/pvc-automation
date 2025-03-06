@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 2_setup_autossh.yml
 - name: Generate and Distribute SSH Key Pair
   hosts: ipaserver
   become: true

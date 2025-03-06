@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 9_node_prereqs_setup.yml
 ---
 - name: Enable Repositories and Install Packages
   hosts: all

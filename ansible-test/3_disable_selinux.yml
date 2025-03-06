@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 3_disable_selinux.yml
 ---
 - name: Install the ansible.posix collection using ansible-galaxy
   hosts: localhost
