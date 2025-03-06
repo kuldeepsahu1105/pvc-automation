@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 1_create_etc_hosts.yml
+### ansible-playbook -i inventory.ini 2_create_etc_hosts.yml
 ---
 - name: Configure /etc/hosts file and Gather System Information
   hosts: all

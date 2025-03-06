@@ -1,11 +1,16 @@
-### ansible-playbook -i inventory.ini 6_install_collection.yml
+### ansible-playbook -i inventory.ini 0_install_collection.yml
 ---
 - name: Install Ansible Collections using ansible_galaxy
-  hosts: localhost
+  hosts: ipaserver
+  become: yes
   tasks:
+    - name: Install community.crypto collection using ansible-galaxy
+      ansible.builtin.shell:
+        cmd: "{{ ansible_galaxy }} collection install community.crypto"
+
     - name: Install freeipa.ansible_freeipa collection using ansible-galaxy
-      ansible.builtin.command:
-        cmd: ansible-galaxy collection download freeipa.ansible_freeipa
+      ansible.builtin.shell:
+        cmd: "{{ ansible_galaxy }} collection install freeipa.ansible_freeipa"
 
 
 #---

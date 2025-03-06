@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 0_set_hostname.yml
+### ansible-playbook -i inventory.ini 1_set_hostname.yml
 ---
 - name: Set hostname to IP address
   hosts: all
