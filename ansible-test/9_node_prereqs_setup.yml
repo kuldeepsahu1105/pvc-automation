@@ -4,17 +4,26 @@
   become: yes
 
   tasks:
-    - name: Enable RHEL repositories
+    - name: Enable RHEL Repositories (if RHEL-based)
       command: >
-        subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms
-        --enable=rhel-9-for-x86_64-appstream-rpms
+        subscription-manager repos --enable=rhel-{{ ansible_distribution_major_version }}-for-{{ ansible_architecture }}-baseos-rpms
+        --enable=rhel-{{ ansible_distribution_major_version }}-for-{{ ansible_architecture }}-appstream-rpms
+      when: ansible_os_family == "RedHat"
+
+    - name: Enable CentOS Stream AppStream Repos (if CentOS)
+      command: dnf config-manager --set-enabled appstream
+      when: ansible_distribution == "CentOS"
+
+    - name: Enable EPEL Repository (for RHEL & CentOS)
+      dnf:
+        name: epel-release
+        state: present
+      when: ansible_os_family == "RedHat"
 
     - name: Install necessary packages
       dnf:
         name:
           - python3
-          - java-17-openjdk
-          - java-17-openjdk-devel
           - python3-pip
           - wget
           - telnet
@@ -25,6 +34,14 @@
           - bind-utils
           - nc
         state: present
+
+    - name: Install Java only on non-IPA server hosts
+      dnf:
+        name:
+          - "java-{{ java_version }}-openjdk"
+          - "java-{{ java_version }}-openjdk-devel"
+        state: present
+      when: "'ipaserver' not in inventory_hostname"
 
     - name: Verify Java installation
       command: java -version

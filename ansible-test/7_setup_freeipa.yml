@@ -1,69 +1,105 @@
-
 ---
-
-#---
-#- name: Install Ansible Collections using ansible_galaxy
-#  hosts: localhost
-#  tasks:
-#    - name: Install community.general collection
-#      ansible.builtin.ansible_galaxy:
-#        name: freeipa.ansible_freeipa
-#        state: present  # state can be 'present' or 'absent' for installation/uninstallation
-#
-
-###
 - name: Install and Configure FreeIPA Server
   hosts: ipaserver
   become: yes
-#  vars:
-#    ipaadmin_password: "{{ ipaadmin_password }}"
-#    ipaserver_domain: "{{ ipaserver_domain }}"
-#    ipaserver_realm: "{{ ipaserver_realm }}"
-#    ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
-#    ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+  vars_files:
+    - group_vars/all.yml
 
   tasks:
-#    - name: Print all variables passed to the playbook
-#      debug:
-#        var: hostvars[inventory_hostname]
-#
     - name: Print variables passed to the playbook
       debug:
-        msg: |
+        msg: >-
+          hostname: "{{ ansible_fqdn }}"
           ipaadmin_password: "{{ ipaadmin_password }}"
           ipaserver_domain: "{{ ipaserver_domain }}"
           ipaserver_realm: "{{ ipaserver_realm }}"
           ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
           ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
 
-    - name: Install FreeIPA Server (Using the freeipa.ansible_freeipa collection)
-      ansible.builtin.yum:
-        name: freeipa-server
+    - name: Install required packagesx
+      dnf:
+        name:
+          - ipa-server
+          - bind
+          - bind-dyndb-ldap
+          - ipa-server-dns
+          - firewalld
         state: present
 
-#- name: Install and Configure FreeIPA Server
-#  hosts: ipaserver
-#  become: yes
-#  vars:
-#    ipaadmin_password: "{{ ipaadmin_password }}"
-#    ipaserver_domain: "{{ ipaserver_domain }}"
-#    ipaserver_realm: "{{ ipaserver_realm }}"
-#    ipaserver_setup_dns: "{{ ipaserver_setup_dns }}"
-#    ipaserver_auto_forwarders: "{{ ipaserver_auto_forwarders }}"
-#
-#  tasks:
-#    - name: Install FreeIPA Server (Using the freeipa.ansible_freeipa collection)
-#      ansible.builtin.yum:
-#        name: freeipa-server
-#        state: present
-#
-#    - name: Setup FreeIPA Server
-#      freeipa.ansible_freeipa.freeipa_server:
-#        domain: "{{ ipaserver_domain }}"
-#        realm: "{{ ipaserver_realm }}"
-#        admin_password: "{{ ipaadmin_password }}"
-#        setup_dns: "{{ ipaserver_setup_dns }}"
+    # - name: Set Java alternatives (if required)
+    #   command: update-alternatives --config java
+    #   register: java_result
+    #   changed_when: "'selection' in java_result.stdout"
+
+    - name: Extract NetBIOS name from realm
+      set_fact:
+        netbios_name: "{{ ipaserver_realm.split('.')[0] }}"
+  
+    - name: Display derived NetBIOS name (for verification)
+      debug:
+        msg: "Derived NetBIOS Name: {{ netbios_name }}"
+
+    - name: Check if IPA server is already installed
+      command: ipa-server-install --version
+      register: ipa_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Display IPA installation status
+      debug:
+        msg: "IPA Server is already installed with version: {{ ipa_check.stdout }}"
+      when: ipa_check.rc == 0
+
+    - name: Run IPA server installation
+      command: >
+        ipa-server-install --setup-dns
+        --hostname={{ ansible_fqdn }}
+        --ip-address={{ ansible_default_ipv4.address }}
+        --domain={{ ipaserver_domain }}
+        --realm={{ ipaserver_realm }}
+        --ds-password={{ ipadm_password }}
+        --admin-password={{ ipaadmin_password }}
+        --no-dnssec-validation
+        --netbios-name={{ netbios_name }}
+        {% if dns_forwarders == 'no' %} --no-forwarders {% endif %}
+        {% if reverse_zones == 'no' %} --no-reverse {% endif %}
+        {% if chrony_enabled == 'yes' %} --ntp-server=pool.ntp.org {% endif %}
+      register: ipa_install_result
+      changed_when: "'The ipa-server-install command was successful' in ipa_install_result.stdout"
+      when: ipa_check.rc != 0
 #        auto_forwarders: "{{ ipaserver_auto_forwarders }}"
-#        state: present
-#
-...
+
+    - name: Validate IPA Services
+      command: ipactl status
+      register: ipa_status
+      changed_when: false
+      failed_when: "'The ipactl command was successful' not in ipa_status.stderr"
+
+    - name: Ensure Kerberos Ticket is Present
+      shell: echo "{{ ipaadmin_password }}" | kinit {{ ipaadmin_principal }}
+      register: kinit_result
+      changed_when: false
+      failed_when: kinit_result.rc != 0
+
+    - name: Print Current Kerberos Ticket
+      command: klist -e
+      register: kerberos_ticket
+      changed_when: false
+
+    - name: Debug Kerberos Ticket Details
+      debug:
+        msg: "{{ kerberos_ticket.stdout_lines }}"
+
+    - name: Stop firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Disable firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: disabled
+        enabled: false
+      ignore_errors: true

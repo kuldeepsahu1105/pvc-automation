@@ -23,17 +23,17 @@
       register: defrag_hugepage_value
     - debug: var=defrag_hugepage_value.stdout_lines
 
-    - name: Print ntpd state
+    - name: Print chronyd state
       ansible.builtin.systemd:
-        name: ntpd
-      register: ntpd_status
+        name: chronyd
+      register: chronyd_status
     - debug:
-        var: ntpd_status.status.ActiveState
+        var: chronyd_status.status.ActiveState
 
-    - name: Verify if ntpd is enabled to run on reboot
-      shell: systemctl is-enabled ntpd
-      register: ntpd_enabled_status
-    - debug: var=ntpd_enabled_status.stdout_lines
+    - name: Verify if chronyd is enabled to run on reboot
+      shell: systemctl is-enabled chronyd
+      register: chronyd_enabled_status
+    - debug: var=chronyd_enabled_status.stdout_lines
 
     - name: Print firewalld state
       ansible.builtin.systemd:
@@ -51,14 +51,14 @@
 
 #####
 - name: Tasks for remaining prereq on all the hosts
-  hosts: cluster:ipaserver
+  hosts: all:ipaserver
   become: yes
   become_user: root
   roles:
     - cdp_base_OS_prereq
 
 - name: Tasks for packages installation on all the CDP Base hosts
-  hosts: cluster
+  hosts: all
   become: yes
   become_user: root
   tasks:

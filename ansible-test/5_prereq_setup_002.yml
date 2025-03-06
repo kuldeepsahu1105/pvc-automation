@@ -35,7 +35,7 @@
     # Ensure /etc/pam.d/su has correct settings using a template
     - name: Configure PAM settings
       template:
-        src: pam_su.j2
+        src: templates/pam_su.j2
         dest: /etc/pam.d/su
         owner: root
         group: root
@@ -111,7 +111,7 @@
 
     - name: Deploy rc.local template
       template:
-        src: rc.local.j2
+        src: templates/rc.local.j2
         dest: /etc/rc.d/rc.local
         mode: '0755'
 
@@ -172,7 +172,7 @@
 
     - name: Generate TCP checksum offload disable script from template
       template:
-        src: disable_tcp_checksum_offload.j2
+        src: templates/disable_tcp_checksum_offload.j2
         dest: /root/disable_tcp_checksum.sh
         mode: '0755'
         backup: yes

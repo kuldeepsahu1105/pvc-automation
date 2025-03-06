@@ -41,12 +41,12 @@
     
     - name: Configure Cloudera Manager repo
       template:
-        src: cloudera-manager.repo.j2
+        src: templates/cloudera-manager.repo.j2
         dest: /etc/yum.repos.d/cloudera-manager.repo
     
     - name: Configure PostgreSQL repo
       template:
-        src: postgresql.repo.j2
+        src: templates/postgresql.repo.j2
         dest: /etc/yum.repos.d/postgresql.repo
     
     - name: Download Cloudera Manager RPMs

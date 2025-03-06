@@ -22,7 +22,7 @@
 
     - name: Update /etc/resolv.conf
       template:
-        src: resolv.conf.j2
+        src: templates/resolv.conf.j2
         dest: /etc/resolv.conf
 
     - name: Disable SELinux

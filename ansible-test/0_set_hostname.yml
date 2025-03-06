@@ -4,6 +4,9 @@
   become: yes
   remote_user: ec2-user  # Specify the SSH user
   tasks:
+    - name: Verify connectivity to all hosts
+      ping:
+
     - name: Print cldr_hostname and ipaserver_domain
       debug:
         msg: "cldr_hostname is {{ cldr_hostname }} and ipaserver_domain is {{ ipaserver_domain }}"

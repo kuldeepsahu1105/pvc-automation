@@ -59,7 +59,7 @@
 
     - name: Prepare /etc/resolv.conf content using existing values and IPA settings
       ansible.builtin.template:
-        src: resolv.conf.j2
+        src: templates/resolv.conf.j2
         dest: /etc/resolv.conf
         backup: yes
 
@@ -95,7 +95,7 @@
 
     - name: Prepare /etc/sysconfig/network content using existing values and IPA settings
       ansible.builtin.template:
-        src: sysconfig_network.j2
+        src: templates/sysconfig_network.j2
         dest: /etc/sysconfig/network
         backup: yes
 

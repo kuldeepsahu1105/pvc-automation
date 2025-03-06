@@ -33,6 +33,5 @@ cat /etc/hosts
 ansible-playbook 2_setup_autossh.yml -i inv.ini
 
 echo "Installing IPA Server and required packages..."
-sudo dnf install -y ipa-server bind bind-dyndb-ldap ipa-server-dns firewalld
 
 echo "Script execution completed!"

@@ -5,3 +5,14 @@
     - name: Install freeipa.ansible_freeipa collection using ansible-galaxy
       ansible.builtin.command:
         cmd: ansible-galaxy collection download freeipa.ansible_freeipa
+
+
+#---
+#- name: Install Ansible Collections using ansible_galaxy
+#  hosts: localhost
+#  tasks:
+#    - name: Install community.general collection
+#      ansible.builtin.ansible_galaxy:
+#        name: freeipa.ansible_freeipa
+#        state: present  # state can be 'present' or 'absent' for installation/uninstallation
+#
