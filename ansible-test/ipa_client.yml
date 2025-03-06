@@ -5,33 +5,52 @@
     - group_vars/all.yml
 
   tasks:
-    - name: Check if IPA client is already installed
-      command: ipa-client-install --version
+    - name: Check if IPA client is installed
+      ansible.builtin.command: ipa-client-install --version
       register: ipa_client_check
       changed_when: false
-      ignore_errors: true  # Avoid failure if IPA is not installed
+      ignore_errors: true
 
-    - name: Derive BaseDN from ipaserver_domain
-      set_fact:
-        basedn: "{{ ipaserver_domain.split('.') | map('regex_replace', '^(.*)$', 'dc=\\1') | join(',') }}"
+    - name: Print IPA client version if already installed
+      debug:
+        msg: "IPA Client is already installed. Version: {{ ipa_check.stdout }}"
+      when: ipa_client_check.rc == 0
+
+    # - name: Install required packages
+    #   ansible.builtin.dnf:
+    #     name: freeipa-client
+    #     state: present
+    #   when: ipa_check.rc != 0
 
     - name: Debug inventory hostname
       debug:
         msg: "This host is {{ inventory_hostname }}"
 
-    - name: Join IPA in force mode with maximum 5 kinit attempts
-      freeipa.ansible_freeipa.ipaclient_join:
-        servers: ["ipaserver.{{ ipaserver_domain }}"]
-        realm: "{{ ipaserver_realm }}"
-        basedn: "{{ basedn }}"
-        hostname: "{{ inventory_hostname }}"
-        principal: "{{ ipaadmin_principal }}"
-        password: "{{ ipaadmin_password }}"
-        force_join: yes
-        kinit_attempts: 5
-        krb_name: "/tmp/tmpkrb5.conf"
+    - name: Run FreeIPA client installation (non-interactive)
+      ansible.builtin.command: >
+        ipa-client-install --unattended --force-join --force
+        --realm={{ ipaserver_realm }} --domain={{ ipaserver_domain }} --server="{{ ansible_fqdn }}"
+        --principal={{ ipaadmin_principal }} --password={{ ipaadmin_password }}
+        --mkhomedir --enable-dns-updates --ntp-server=pool.ntp.org
+      register: ipa_client_output
+      changed_when: "'Client configuration complete' in ipa_client_output.stdout"
+      when: ipa_client_check.rc != 0
+      no_log: true  # Hide password from logs
 
-    - name: Display installation result
+    - name: Display IPA client installation output
       debug:
-        var: ipa_client_install_result.stdout
-      when: ipa_client_check.rc != 0  # Show output only when installation happens
+        msg: "{{ ipa_client_output.stdout_lines }}"
+      when: ipa_client_check.rc != 0
+
+    # - name: Join IPA in force mode with maximum 5 kinit attempts
+    #   freeipa.ansible_freeipa.ipaclient_join:
+    #     servers: ["ipaserver.{{ ipaserver_domain }}"]
+    #     realm: "{{ ipaserver_realm }}"
+    #     basedn: "{{ basedn }}"
+    #     hostname: "{{ inventory_hostname }}"
+    #     principal: "{{ ipaadmin_principal }}"
+    #     password: "{{ ipaadmin_password }}"
+    #     force_join: yes
+    #     kinit_attempts: 5
+    #     krb_name: "/tmp/tmpkrb5.conf"
+

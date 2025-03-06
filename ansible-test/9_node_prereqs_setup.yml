@@ -110,20 +110,6 @@
       ansible.builtin.debug:
         msg: "{{ psql_version.stdout }}"
 
-- name: Download FreeIPA client packages and configure Chrony
-  hosts: all:!ipaserver
-  become: yes
-
-  tasks:
-    - name: Download FreeIPA client packages and required packages
-      dnf:
-        name:
-          - freeipa-client
-          - openldap-clients
-          - krb5-workstation
-          - krb5-libs
-        state: present
-
     - name: Verify Chrony tracking
       command: chronyc tracking
       register: chrony_tracking_output
@@ -141,3 +127,19 @@
     - name: Display Chrony sources output
       debug:
         msg: "{{ chrony_sources_output.stdout_lines }}"
+
+- name: Download FreeIPA client packages and configure Chrony
+  hosts: all:!ipaserver
+  become: yes
+
+  tasks:
+    - name: Download FreeIPA client packages and required packages
+      dnf:
+        name:
+          - freeipa-client
+          - openldap-clients
+          - krb5-workstation
+          - krb5-libs
+        state: present
+
+
