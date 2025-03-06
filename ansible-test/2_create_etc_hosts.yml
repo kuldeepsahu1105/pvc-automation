@@ -19,7 +19,7 @@
 
     - name: Print OS version information
       debug:
-        msg: "OS Version: {{ os_version.stdout }}"
+        msg: "{{ os_version.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Verify Hostname (Fully Qualified)
       command: hostname -f

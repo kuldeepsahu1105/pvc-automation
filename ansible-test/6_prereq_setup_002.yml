@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 5_prereq_setup_002.yml
+### ansible-playbook -i inventory.ini 6_prereq_setup_002.yml
 ---
 - name: Configure Syslog, Ulimit, and System Settings
   hosts: all
@@ -12,7 +12,7 @@
 
     - name: Display rsyslog version
       debug:
-        msg: "rsyslog version: {{ rsyslog_version.stdout }}"
+        msg: "{{ rsyslog_version.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Check rsyslog service status
       command: service rsyslog status
@@ -20,7 +20,7 @@
 
     - name: Display rsyslog service status
       debug:
-        msg: "rsyslog service status: {{ rsyslog_status.stdout }}"
+        msg: "{{ rsyslog_status.stdout.replace('\t', '    ').split('\n') }}"
 
     # Ulimit Configuration (Directly Apply to All Nodes)
     - name: Ensure ulimit values are set in /etc/security/limits.conf
@@ -87,7 +87,7 @@
 
     - name: Display sysctl reload output
       debug:
-        msg: "{{ sysctl_reload_output.stdout }}"
+        msg: "{{ sysctl_reload_output.stdout.replace('\t', '    ').split('\n') }}"
 
     # Verify sysctl.conf contents
     - name: Show /etc/sysctl.conf contents
@@ -96,7 +96,7 @@
 
     - name: Display sysctl.conf contents
       debug:
-        msg: "{{ sysctl_conf_contents.stdout }}"
+        msg: "{{ sysctl_conf_contents.stdout.replace('\t', '    ').split('\n') }}"
 
 # Disable Transparent Huge Pages (THP)
 - name: Disable Transparent Huge Pages and IPv6 on all nodes
@@ -127,7 +127,7 @@
 
     - name: Show rc.local contents
       debug:
-        msg: "{{ rc_local_content.stdout }}"
+        msg: "{{ rc_local_content.stdout.replace('\t', '    ').split('\n') }}"
 
     # Disable Tuned Service
     - name: Ensure tuned service is started
@@ -145,7 +145,7 @@
 
     - name: Display tuned profiles
       debug:
-        msg: "{{ tuned_profiles.stdout }}"
+        msg: "{{ tuned_profiles.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Stop and disable tuned service
       systemd:
@@ -187,4 +187,4 @@
 
     - name: Display checksum offload status
       debug:
-        msg: "{{ checksum_offload_status.stdout }}"
+        msg: "{{ checksum_offload_status.stdout.replace('\t', '    ').split('\n') }}"
