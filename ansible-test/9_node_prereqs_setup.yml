@@ -128,7 +128,7 @@
       debug:
         msg: "{{ chrony_sources_output.stdout_lines }}"
 
-- name: Download FreeIPA client packages and configure Chrony
+- name: Install FreeIPA client packages
   hosts: all:!ipaserver
   become: yes
 
@@ -141,5 +141,3 @@
           - krb5-workstation
           - krb5-libs
         state: present
-
-

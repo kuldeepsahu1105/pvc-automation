@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 8_setup_dns.yml
+### ansible-playbook -i inventory.ini 8_setup_dns_records.yml
 ---
 - name: Manage FreeIPA DNS Zones and Records
   hosts: ipaserver

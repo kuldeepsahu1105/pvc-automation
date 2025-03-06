@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 10_setup_internal_repo.yml
+### ansible-playbook -i inventory.ini 12_setup_internal_repo.yml
 ---
 - name: Set up HTTPD to host Red Hat repository
   hosts: cldr-mngr

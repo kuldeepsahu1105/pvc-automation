@@ -107,3 +107,110 @@
     - name: Show the final content of /etc/sysconfig/network
       debug:
         msg: "{{ sysconfig_network_output.stdout }}"
+
+
+
+
+---
+- name: Generate and configure /etc/resolv.conf file based on existing values
+  hosts: all
+  become: yes
+  vars:
+    ipa_domain: "{{ ipaserver_domain | default('cdppvcds.com') }}"
+
+  tasks:
+    - name: Get IPA server IP from inventory
+      set_fact:
+        ipa_server_ip: "{{ groups['ipaserver'][0] }}"
+
+    - name: Print IPA server IP and IPA domain values
+      debug:
+        msg:
+          - "IPA Server IP: {{ ipa_server_ip }}"
+          - "IPA Domain: {{ ipa_domain }}"
+
+    - name: Backup existing /etc/resolv.conf file
+      ansible.builtin.copy:
+        src: /etc/resolv.conf
+        dest: /etc/resolv.conf.bak_bfr
+
+    - name: Read current /etc/resolv.conf to gather existing values
+      ansible.builtin.slurp:
+        src: /etc/resolv.conf
+      register: resolv_conf_content
+
+    - name: Print raw /etc/resolv.conf content
+      debug:
+        msg: "{{ resolv_conf_content['content'] | b64decode }}"
+
+    - name: Set up search domains and nameservers based on current resolv.conf
+      set_fact:
+        current_search_domains: "{{ resolv_conf_content['content'] | b64decode | regex_findall('^search (.*)$', multiline=True) | first }}"
+        current_nameservers: "{{ resolv_conf_content['content'] | b64decode | regex_findall('^nameserver\\s+(\\S+)', multiline=True) }}"
+
+    - name: Print current search domains and nameservers
+      debug:
+        msg:
+          - "Current search domains: {{ current_search_domains }}"
+          - "Current nameservers: {{ current_nameservers }}"
+
+    # --- Ensure IPA server IP is not duplicated ---
+    - name: Remove duplicate IPA server IP from current nameservers
+      set_fact:
+        current_nameservers: "{{ current_nameservers | reject('equalto', ipa_server_ip) | list }}"
+
+    # --- Ensure IPA server domain is not duplicated ---
+    - name: Remove duplicate IPA server domain from current search domains
+      set_fact:
+        current_search_domains: "{{ current_search_domains | reject('equalto', ipa_domain) | list | join('') }}"
+
+    - name: Prepare /etc/resolv.conf content using existing values and IPA settings
+      ansible.builtin.template:
+        src: templates/resolv.conf.j2
+        dest: /etc/resolv.conf
+        backup: yes
+
+    - name: Verify new /etc/resolv.conf content
+      ansible.builtin.command:
+        cmd: cat /etc/resolv.conf
+      register: resolv_conf_output
+
+    - name: Show the final content of /etc/resolv.conf
+      debug:
+        msg: "{{ resolv_conf_output.stdout }}"
+
+    # --- Handling /etc/sysconfig/network ---
+    - name: Backup existing /etc/sysconfig/network file
+      ansible.builtin.copy:
+        src: /etc/sysconfig/network
+        dest: /etc/sysconfig/network.bak_bfr
+        backup: yes
+
+    - name: Read current /etc/sysconfig/network to gather existing values
+      ansible.builtin.slurp:
+        src: /etc/sysconfig/network
+      register: sysconfig_network_content
+
+    - name: Print raw /etc/sysconfig/network content
+      debug:
+        msg: "{{ sysconfig_network_content['content'] | b64decode }}"
+
+    - name: Set domain and DNS1 based on IPA server
+      set_fact:
+        sysconfig_domain: "{{ ipa_domain }}"
+        sysconfig_dns1: "{{ ipa_server_ip }}"
+
+    - name: Prepare /etc/sysconfig/network content using existing values and IPA settings
+      ansible.builtin.template:
+        src: templates/sysconfig_network.j2
+        dest: /etc/sysconfig/network
+        backup: yes
+
+    - name: Verify new /etc/sysconfig/network content
+      ansible.builtin.command:
+        cmd: cat /etc/sysconfig/network
+      register: sysconfig_network_output
+
+    - name: Show the final content of /etc/sysconfig/network
+      debug:
+        msg: "{{ sysconfig_network_output.stdout }}"
