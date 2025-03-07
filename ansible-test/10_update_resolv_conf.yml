@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 10_update_resolv_conf.yml
 ---
 - name: Generate and configure /etc/resolv.conf file based on existing values
   hosts: all
@@ -8,7 +9,8 @@
   tasks:
     - name: Get IPA server IP from inventory
       set_fact:
-        ipa_server_ip: "{{ groups['ipaserver'][0] }}"
+        ipa_server_ip: "{{ groups['ipaserver'][0] if 'ipaserver' in groups and groups['ipaserver'] | length > 0 else '' }}"
+        # ipa_server_ip: "{{ groups['ipaserver'][0] }}"
 
     - name: Print IPA server IP and IPA domain values
       debug:
@@ -21,14 +23,22 @@
         src: /etc/resolv.conf
       register: resolv_conf_content
 
-    - name: Print raw /etc/resolv.conf content
+    - name: Print existing /etc/resolv.conf content
       debug:
-        msg: "{{ resolv_conf_content['content'] | b64decode }}"
+        msg: "{{ resolv_conf_content['content'] | b64decode | replace('\t', '    ') | split('\n') }}"
 
-    - name: Set up search domains and nameservers based on current resolv.conf
+    - name: Decode and parse /etc/resolv.conf
       set_fact:
-        current_search_domains: "{{ (resolv_conf_content['content'] | b64decode | regex_findall('^search (.*)$', multiline=True) | first | split(' ') if resolv_conf_content['content'] | b64decode | regex_search('^search ') else []) | unique }}"
-        current_nameservers: "{{ resolv_conf_content['content'] | b64decode | regex_findall('^nameserver\\s+(\\S+)', multiline=True) | unique }}"
+        resolv_lines: "{{ resolv_conf_content['content'] | b64decode | split('\n') | select('search', '^(search|nameserver) ') | list }}"
+
+    - name: Print - Parsed /etc/resolv.conf Lines
+      debug:
+        msg: "{{ resolv_lines | join('\n') | split('\n') }}"
+
+    - name: Extract and setup current_search_domains and current_nameservers based on current resolv.conf
+      set_fact:
+        current_search_domains: "{{ resolv_lines | select('match', '^search ') | map('regex_replace', '^search ', '') | first | default('') }}"
+        current_nameservers: "{{ resolv_lines | select('match', '^nameserver ') | map('regex_replace', '^nameserver ', '') | list }}"
 
     - name: Print current search domains and nameservers
       debug:
@@ -36,45 +46,39 @@
           - "Current search domains: {{ current_search_domains }}"
           - "Current nameservers: {{ current_nameservers }}"
 
-    # --- Ensure IPA server IP is not duplicated ---
-    - name: Remove duplicate IPA server IP from current nameservers
+    - name: Prepare new search and nameserver lines for updated resolv.conf file
       set_fact:
-        current_nameservers: "{{ current_nameservers | reject('equalto', ipa_server_ip) | list }}"
+        updated_search: "search {{ (current_search_domains.split() + [ipa_domain]) | unique | join(' ') }}"
+        updated_nameservers: "{{ ([ipa_server_ip] + current_nameservers + ['127.0.0.1']) | unique | map('regex_replace', '^(.*)$', 'nameserver \\1') | list }}"
 
-    # --- Ensure IPA server domain is not duplicated in search domains ---
-    - name: Remove duplicate IPA server domain from current search domains
+    - name: Print updated search and nameserver entries
+      debug:
+        msg:
+          - "Updated search domains: {{ updated_search.split('\n') }}"
+          - "Updated nameservers: {{ updated_nameservers | join('\n') | split('\n') }}"
+
+    - name: Prepare new /etc/resolv.conf content using existing values and IPA settings
       set_fact:
-        current_search_domains: "{{ current_search_domains | reject('equalto', ipa_domain) | list }}"
+        new_resolv_conf: "{{ ([updated_search] + updated_nameservers) | join('\n') + '\n' }}"
 
-    # --- Append IPA domain to search domains if not already present ---
-    - name: Append IPA domain to search domains if not already present
-      set_fact:
-        current_search_domains: "{{ current_search_domains + [ipa_domain] }}"
+    - name: Print final /etc/resolv.conf content
+      debug:
+        msg: "{{ new_resolv_conf | split('\n') }}"
 
-    - name: Prepare /etc/resolv.conf content using existing values and IPA settings
-      ansible.builtin.template:
-        src: templates/resolv.conf.j2
+    - name: Write updated /etc/resolv.conf
+      ansible.builtin.copy:
         dest: /etc/resolv.conf
-        backup: yes
+        content: "{{ new_resolv_conf }}"
+        owner: root
+        group: root
+        mode: "0644"
 
     - name: Verify new /etc/resolv.conf content
       ansible.builtin.command:
         cmd: cat /etc/resolv.conf
       register: resolv_conf_output
+      changed_when: false
 
     - name: Show the final content of /etc/resolv.conf
       debug:
-        msg: "{{ resolv_conf_output.stdout }}"
-
-# ---
-# - name: Generate and configure /etc/resolv.conf file based on existing values
-#   hosts: all
-#   become: yes
-#   vars:
-#     ipa_domain: "{{ ipaserver_domain | default('cdppvcds.com') }}"
-
-#     - name: Set up search domains and nameservers based on current resolv.conf
-#       set_fact:
-#         current_search_domains: "{{ resolv_conf_content['content'] | b64decode | regex_findall('^search (.*)$', multiline=True) | first }}"
-#         current_nameservers: "{{ resolv_conf_content['content'] | b64decode | regex_findall('^nameserver\\s+(\\S+)', multiline=True) }}"
-
+        msg: "{{ resolv_conf_output.stdout.replace('\t', '    ').split('\n') }}"
