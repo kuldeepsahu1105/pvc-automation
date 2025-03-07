@@ -1,16 +1,8 @@
-### ansible-playbook -i inventory.ini 5_prereq_setup.yml
 ---
 - name: System Update and Package Installation
   hosts: all
-  become: yes  # Ensure you have the necessary privileges
+  become: yes # Ensure you have the necessary privileges
   tasks:
-
-    # - name: Update all packages
-    #   dnf:
-    #     name: "*"
-    #     state: latest
-    #   register: update_result
-
     - name: Install required packages
       dnf:
         name:
@@ -18,14 +10,17 @@
           - telnet
           - net-tools
           - bind-utils
+          - dnsutils
           - iproute
+          - mlocate
           - traceroute
           - nc
+          - tar
           - python3
           - python3-pip
-          - gcc  # Required for compiling some Python packages
-          - python3-devel  # Required for some Python libraries
-          - postgresql-libs  # Ensures PostgreSQL dependencies are installed
+          - gcc # Required for compiling some Python packages
+          - python3-devel # Required for some Python libraries
+          - postgresql-libs # Ensures PostgreSQL dependencies are installed
         state: present
 
     - name: Upgrade pip3 to the latest version
@@ -34,7 +29,7 @@
         state: latest
         executable: pip3
       become: yes
-    
+
     - name: Verify if Python3 is installed
       command: python3 --version
       register: python_version
@@ -55,16 +50,35 @@
         msg: "Pip3 version: {{ pip_version.stdout }}"
       when: pip_version.rc == 0
 
-    - name: Ensure Python3 and Pip3 are installed
-      package:
-        name: 
-          - python3
-          - python3-pip
-        state: present
-
     - name: Install psycopg2-binary
       pip:
         name: psycopg2-binary
         state: present
         executable: pip3
       become: yes
+
+    - name: Install Java only on non-IPA server hosts
+      dnf:
+        name:
+          - "java-{{ java_version }}-openjdk"
+          - "java-{{ java_version }}-openjdk-devel"
+        state: present
+      when: "'ipaserver' not in inventory_hostname"
+
+    - name: Verify Java installation
+      command: java -version
+      register: java_version_output
+      changed_when: false
+
+    - name: Display Java version
+      debug:
+        msg: "{{ java_version_output.stdout_lines }}"
+
+    - name: Verify psycopg2 installation
+      command: pip3 list | grep psy
+      register: psycopg2_output
+      changed_when: false
+
+    - name: Display psycopg2 installation output
+      debug:
+        msg: "{{ psycopg2_output.stdout_lines }}"

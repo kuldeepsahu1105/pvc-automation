@@ -1,0 +1,36 @@
+### ansible-playbook -i inventory.ini 7_prereq_setup_003.yml
+---
+- name: Enable Repositories and Install Packages
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Enable RHEL Repositories (if RHEL-based)
+      command: >
+        subscription-manager repos --enable=rhel-{{ ansible_distribution_major_version }}-for-{{ ansible_architecture }}-baseos-rpms
+        --enable=rhel-{{ ansible_distribution_major_version }}-for-{{ ansible_architecture }}-appstream-rpms
+      when: ansible_os_family == "RedHat"
+
+    - name: Enable CentOS Stream AppStream Repos (if CentOS)
+      command: dnf config-manager --set-enabled appstream
+      when: ansible_distribution == "CentOS"
+
+    - name: Install PostgreSQL repository
+      dnf:
+        name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        state: present
+        disable_gpg_check: yes
+
+    - name: Install PostgreSQL 14
+      ansible.builtin.dnf:
+        name: postgresql14
+        state: present
+
+    - name: Verify PostgreSQL installation
+      ansible.builtin.command: psql --version
+      register: psql_version
+      changed_when: false
+
+    - name: Debug PostgreSQL version
+      ansible.builtin.debug:
+        msg: "{{ psql_version.stdout }}"

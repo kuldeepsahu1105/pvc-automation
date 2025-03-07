@@ -1,5 +1,19 @@
-### ansible-playbook -i inventory.ini 10_setup_freeipa_client.yml
+### ansible-playbook -i inventory.ini 12_setup_freeipa_client.yml
 ---
+- name: Install FreeIPA client packages
+  hosts: all:!ipaserver
+  become: yes
+
+  tasks:
+    - name: Download FreeIPA client packages and required packages
+      dnf:
+        name:
+          - freeipa-client
+          - openldap-clients
+          - krb5-workstation
+          - krb5-libs
+        state: present
+
 - name: Enroll nodes as IPA clients
   hosts: all:!ipaserver
   become: true

@@ -1,0 +1,47 @@
+### ansible-playbook -i inventory.ini 11_update_syscfg_network.yml
+---
+- name: Generate and configure /etc/resolv.conf file based on existing values
+  hosts: all
+  become: yes
+  vars:
+    ipa_domain: "{{ ipaserver_domain | default('cldrsetup.local') }}"
+
+  tasks:
+    - name: Get IPA server IP from inventory
+      set_fact:
+        ipa_server_ip: "{{ groups['ipaserver'][0] }}"
+
+    - name: Print IPA server IP and IPA domain values
+      debug:
+        msg:
+          - "IPA Server IP: {{ ipa_server_ip }}"
+          - "IPA Domain: {{ ipa_domain }}"
+
+    - name: Read current /etc/sysconfig/network to gather existing values
+      ansible.builtin.slurp:
+        src: /etc/sysconfig/network
+      register: sysconfig_network_content
+
+    - name: Print raw /etc/sysconfig/network content
+      debug:
+        msg: "{{ sysconfig_network_content['content'] | b64decode | replace('\t', '    ') | split('\n') }}"
+
+    - name: Set domain and DNS1 based on IPA server
+      set_fact:
+        sysconfig_domain: "{{ ipa_domain }}"
+        sysconfig_dns1: "{{ ipa_server_ip }}"
+
+    - name: Prepare /etc/sysconfig/network content using existing values and IPA settings
+      ansible.builtin.template:
+        src: templates/sysconfig_network.j2
+        dest: /etc/sysconfig/network
+        backup: yes
+
+    - name: Verify new /etc/sysconfig/network content
+      ansible.builtin.command:
+        cmd: cat /etc/sysconfig/network
+      register: sysconfig_network_output
+
+    - name: Show the final content of /etc/sysconfig/network
+      debug:
+        msg: "{{ sysconfig_network_output.stdout.replace('\t', '    ').split('\n') }}"

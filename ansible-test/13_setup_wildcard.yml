@@ -1,6 +1,6 @@
-### ansible-playbook -i inventory.ini 11_setup_wildcard.yml
+### ansible-playbook -i inventory.ini 13_setup_wildcard.yml
 ---
-- name: Configure wildcard DNS record and distribute PostgreSQL JDBC driver
+- name: Configure wildcard DNS record
   hosts: ipaserver
   become: true
 
@@ -22,14 +22,32 @@
         record_value: "{{ ecs_master_ip }}"
         state: present
 
+    - name: Verify Created DNS Records in FreeIPA
+      command: ipa dnsrecord-find {{ reverse_dns_zone }} --name=*.apps
+      register: ipa_dns_records
+      changed_when: false
+
+    - name: Debug FreeIPA DNS Records
+      debug:
+        msg: "{{ ipa_dns_records.stdout_lines }}"
+
     - name: Validate DNS resolution using nslookup
       command: "nslookup console-cdp.apps.{{ ipaserver_domain }}"
       register: nslookup_output
       changed_when: false
 
-    - name: Display nslookup output
+    - name: Display nslookup output for DNS
       debug:
-        var: nslookup_output.stdout_lines
+        msg: "{{ nslookup_output.stdout.replace('\t', '    ').split('\n') }}"
+
+    - name: Validate IP resolution using nslookup
+      command: "nslookup {{ ecs_master_ip }}"
+      register: nslookup_output
+      changed_when: false
+
+    - name: Display nslookup output for IP
+      debug:
+        msg: "{{ nslookup_output.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Validate DNS resolution using dig
       command: "dig console-cdp.apps.{{ ipaserver_domain }} A"
@@ -38,7 +56,7 @@
 
     - name: Display dig output
       debug:
-        var: dig_output.stdout_lines
+        msg: "{{ dig_output.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Reverse lookup validation
       command: "dig -x {{ ecs_master_ip }}"
@@ -47,10 +65,33 @@
 
     - name: Display reverse lookup result
       debug:
-        var: reverse_lookup.stdout_lines
+        msg: "{{ reverse_lookup.stdout.replace('\t', '    ').split('\n') }}"
 
 # need to test this once bcoz donwload url was not working
-- name: Download and distribute PostgreSQL JDBC driver
+- name: Download PostgreSQL JDBC driver
+  hosts: all
+  become: true
+  tasks:
+    - name: Download PostgreSQL JDBC driver jar file
+      get_url:
+        url: "https://jdbc.postgresql.org/download/postgresql-{{ postgres_jdbc_version }}.jar"
+        dest: "/tmp/postgresql-{{ postgres_jdbc_version }}.jar"
+        mode: "0644"
+      register: jdbc_download
+      retries: 3
+      delay: 5
+      until: jdbc_download is succeeded
+
+    - name: Verify JDBC driver download
+      stat:
+        path: "/tmp/postgresql-{{ postgres_jdbc_version }}.jar"
+      register: jdbc_file_check
+
+    - name: Debug - Check if JDBC file is present
+      debug:
+        msg: "JDBC file exists: {{ jdbc_file_check.stat.exists }}"
+
+- name: Distribute JDBC driver to all hosts
   hosts: all
   become: true
   tasks:
@@ -58,7 +99,8 @@
       copy:
         src: "/tmp/postgresql-{{ postgres_jdbc_version }}.jar"
         dest: "/usr/share/java/postgresql-connector-java.jar"
-        mode: '0644'
+        mode: "0644"
+        remote_src: yes
 
     - name: Debug - Check if file exists after copying
       command: "ls -l /usr/share/java/postgresql-connector-java.jar"
@@ -77,4 +119,3 @@
     - name: Display JDBC driver file details
       debug:
         var: jdbc_ls_output.stdout_lines
-

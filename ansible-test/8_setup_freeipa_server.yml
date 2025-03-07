@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 7_setup_freeipa_server.yml
+### ansible-playbook -i inventory.ini 8_setup_freeipa_server.yml
 ---
 - name: Install and Configure FreeIPA Server
   hosts: ipaserver
@@ -35,7 +35,7 @@
     - name: Extract NetBIOS name from realm
       set_fact:
         netbios_name: "{{ ipaserver_realm.split('.')[0] }}"
-  
+
     - name: Display derived NetBIOS name (for verification)
       debug:
         msg: "Derived NetBIOS Name: {{ netbios_name }}"
@@ -68,7 +68,7 @@
       register: ipa_install_result
       changed_when: "'The ipa-server-install command was successful' in ipa_install_result.stdout"
       when: ipa_check.rc != 0
-#        auto_forwarders: "{{ ipaserver_auto_forwarders }}"
+    #        auto_forwarders: "{{ ipaserver_auto_forwarders }}"
 
     - name: Validate IPA Services
       command: ipactl status

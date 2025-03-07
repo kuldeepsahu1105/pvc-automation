@@ -8,10 +8,10 @@
       ansible.builtin.shell:
         cmd: "{{ ansible_galaxy }} collection install community.crypto"
 
-    - name: Install freeipa.ansible_freeipa collection using ansible-galaxy  
-      ansible.builtin.shell:  
-        cmd: "{{ ansible_galaxy }} collection install freeipa.ansible_freeipa"  
-      register: result  
-      retries: 3  
-      delay: 5  # Wait 10 seconds before retrying  
-      until: result.rc == 0  
+    - name: Install freeipa.ansible_freeipa collection using ansible-galaxy
+      ansible.builtin.shell:
+        cmd: "{{ ansible_galaxy }} collection install freeipa.ansible_freeipa"
+      register: result
+      retries: 3
+      delay: 5 # Wait 10 seconds before retrying
+      until: result.rc == 0

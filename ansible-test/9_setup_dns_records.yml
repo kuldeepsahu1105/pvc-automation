@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 8_setup_dns_records.yml
+### ansible-playbook -i inventory.ini 9_setup_dns_records.yml
 ---
 - name: Manage FreeIPA DNS Zones and Records
   hosts: ipaserver
@@ -28,7 +28,7 @@
 
     - name: Debug Kerberos Ticket Details
       debug:
-        msg: "{{ kerberos_ticket.stdout_lines }}"
+        msg: "{{ kerberos_ticket.stdout.replace('\t', '    ').split('\n') }}"
 
     - name: Extract Reverse DNS Zone from IP Address
       set_fact:
@@ -45,7 +45,7 @@
         ipaadmin_password: "{{ ipaadmin_password }}"
         name: "{{ item.split('.')[3] }}.{{ item.split('.')[2] }}"
         zone_name: "{{ reverse_dns_zone }}"
-        record_type: 'PTR'
+        record_type: "PTR"
         record_value: "{{ hostvars[item]['cldr_hostname'] }}.{{ ipaserver_domain }}."
         state: present
       loop: "{{ groups['all'] }}"
@@ -60,16 +60,37 @@
         msg: "{{ ipa_dns_records.stdout_lines }}"
 
     - name: Verify A Record using dig
-      shell: dig $(hostname -f) A
+      shell: dig $(hostname -f) A | grep -A2 ANSWER
       register: dig_result
       changed_when: false
 
     - name: Debug dig Output
       debug:
-        msg: "{{ dig_result.stdout_lines | select('search', 'ANSWER') | list }}"
+        msg: "{{ dig_result.stdout.replace('\t', '    ').split('\n') }}"
 
+    - name: Verify reverse lookup using dig
+      shell: dig -x $(hostname -i) | grep -A2 ANSWER
+      register: dig_result
+      changed_when: false
 
-# need to add this in setup_dns.yml
-# ipa dnsrecord-find cldrsetup.local --name=*.apps
-# add nslookup and dig checks
-# see if we can add wildcard zone before installing client
+    - name: Debug dig Output
+      debug:
+        msg: "{{ dig_result.stdout.replace('\t', '    ').split('\n') }}"
+
+    - name: Validate DNS resolution using nslookup
+      shell: "nslookup $(hostname -f)"
+      register: nslookup_output
+      changed_when: false
+
+    - name: Display nslookup output for DNS
+      debug:
+        msg: "{{ nslookup_output.stdout.replace('\t', '    ').split('\n') }}"
+
+    - name: Validate IP resolution using nslookup
+      shell: "nslookup $(hostname -i)"
+      register: nslookup_output
+      changed_when: false
+
+    - name: Display nslookup output for IP
+      debug:
+        msg: "{{ nslookup_output.stdout.replace('\t', '    ').split('\n') }}"

@@ -3,7 +3,7 @@
 - name: Set hostname to IP address
   hosts: all
   become: yes
-  remote_user: ec2-user  # Specify the SSH user
+  remote_user: ec2-user # Specify the SSH user
   tasks:
     - name: Verify connectivity to all hosts
       ping:

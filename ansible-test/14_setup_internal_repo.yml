@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 12_setup_internal_repo.yml
+### ansible-playbook -i inventory.ini 14_setup_internal_repo.yml
 ---
 - name: Set up HTTPD to host Red Hat repository
   hosts: cldr-mngr
@@ -22,18 +22,18 @@
       file:
         path: "{{ httpd_repo_dir }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Add secure content to the HTTPS directory
       copy:
         content: "secure content"
         dest: "{{ httpd_repo_dir }}/index.html"
-        mode: '0644'
+        mode: "0644"
 
     - name: Configure the server name in httpd.conf
       lineinfile:
         path: "{{ httpd_conf_file }}"
-        regexp: '^#ServerName'
+        regexp: "^#ServerName"
         line: "ServerName {{ server_name }}:80"
         create: yes
 

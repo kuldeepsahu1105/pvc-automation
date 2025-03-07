@@ -61,7 +61,7 @@
       shell: "ip addr show eth1 | grep -e inet"
       register: eth1_ip
       changed_when: false
-      failed_when: false  # Prevent failure if eth1 does not exist
+      failed_when: false # Prevent failure if eth1 does not exist
 
     - name: Print eth1 IP Address (if available)
       debug:

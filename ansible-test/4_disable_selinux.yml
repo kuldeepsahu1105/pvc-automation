@@ -11,7 +11,7 @@
       changed_when: false
 
 - name: Set SELinux to permissive and ensure persistence across reboots
-  hosts: 'all:!ipaserver'
+  hosts: "all:!ipaserver"
   become: yes
   tasks:
     - name: Verify current SELinux mode before change
@@ -30,8 +30,8 @@
     - name: Ensure SELinux is set to permissive on boot
       lineinfile:
         path: /etc/selinux/config
-        regexp: '^SELINUX='
-        line: 'SELINUX=permissive'
+        regexp: "^SELINUX="
+        line: "SELINUX=permissive"
         backup: yes
 
     - name: Verify SELinux mode after change
