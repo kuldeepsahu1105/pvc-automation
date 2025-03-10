@@ -23,7 +23,7 @@ print_completion() {
 print_banner
 
 echo "Updating system and installing dependencies..."
-sudo yum install -y git dnf wget telnet net-tools bind-utils iproute traceroute nc python3 python3-pip ansible-core
+sudo yum install -y git dnf wget telnet net-tools bind-utils dnsutils iproute traceroute nc python3 python3-pip ansible-core
 
 echo "Verifying installations..."
 git --version

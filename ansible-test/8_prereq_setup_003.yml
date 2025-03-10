@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 7_prereq_setup_003.yml
+### ansible-playbook -i inventory.ini 8_prereq_setup_003.yml
 ---
 - name: Enable Repositories and Install Packages
   hosts: all
@@ -17,20 +17,20 @@
 
     - name: Install PostgreSQL repository
       dnf:
-        name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        name: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}/pgdg-redhat-repo-latest.noarch.rpm"
         state: present
         disable_gpg_check: yes
 
-    - name: Install PostgreSQL 14
+    - name: Install PostgreSQL {{ postgresql_version }} client (psql)
       ansible.builtin.dnf:
-        name: postgresql14
+        name: postgresql{{ postgresql_version }}
         state: present
 
-    - name: Verify PostgreSQL installation
+    - name: Verify PostgreSQL(psql) installation
       ansible.builtin.command: psql --version
       register: psql_version
       changed_when: false
 
-    - name: Debug PostgreSQL version
+    - name: Print PostgreSQL(psql) version
       ansible.builtin.debug:
         msg: "{{ psql_version.stdout }}"

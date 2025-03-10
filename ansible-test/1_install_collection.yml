@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 0_install_collection.yml
+### ansible-playbook -i inventory.ini 1_install_collection.yml
 ---
 - name: Install Ansible Collections using ansible_galaxy
   hosts: ipaserver

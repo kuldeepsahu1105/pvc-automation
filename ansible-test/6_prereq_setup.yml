@@ -1,3 +1,5 @@
+### ansible-playbook -i inventory.ini 6_prereq_setup.yml
+
 ---
 - name: System Update and Package Installation
   hosts: all

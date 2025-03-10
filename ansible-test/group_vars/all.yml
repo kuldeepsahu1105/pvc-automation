@@ -53,3 +53,6 @@ wildcard_dns_record: "*.apps"
 postgres_jdbc_version: "42.7.5"  # Configurable version
 jdbc_driver_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgres_jdbc_version }}.jar"
 jdbc_driver_dest: "/usr/share/java/postgresql-connector-java.jar"
+
+# postgres database variables
+postgresql_version: 14

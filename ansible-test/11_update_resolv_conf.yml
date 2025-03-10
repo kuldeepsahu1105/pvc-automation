@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 10_update_resolv_conf.yml
+### ansible-playbook -i inventory.ini 11_update_resolv_conf.yml
 ---
 - name: Generate and configure /etc/resolv.conf file based on existing values
   hosts: all
