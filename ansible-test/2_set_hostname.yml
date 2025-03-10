@@ -3,7 +3,7 @@
 - name: Set hostname to IP address
   hosts: all
   become: yes
-  remote_user: ec2-user # Specify the SSH user
+  remote_user: "{{ ansible_user }}" # Specify the SSH user
   tasks:
     - name: Verify connectivity to all hosts
       ping:
@@ -19,6 +19,7 @@
     - name: Verify hostname has been set
       command: hostname
       register: current_hostname
+      changed_when: false
 
     - name: Display the new hostname
       debug:

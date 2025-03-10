@@ -148,5 +148,8 @@ run_playbook "14_setup_wildcard.yml"
 echo "Setting up internal repository..."
 run_playbook "15_setup_internal_repo.yml"
 
+echo "Downloading CM, CDH and Spark repository files..."
+run_playbook "16_download_repos.yml"
+
 # Print completion banner
 print_completion

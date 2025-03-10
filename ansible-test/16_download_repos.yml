@@ -1,0 +1,98 @@
+### ansible-playbook -i inventory.ini 16_download_repos.yml
+
+---
+- name: Setup Cloudera Manager and Dependencies
+  hosts: cldr-mngr
+  become: yes
+  tasks:
+    - name: Set CDH and Spark version variables
+      set_fact:
+        os_version: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}"
+        cm_major_version: "{{ cm_version.split('.')[:3] | join('.') }}"
+        cdh7: "cdh{{ cdh_version.split('.')[0] }}"
+        cdh_major_version: "{{ cdh_version.split('.')[:3] | join('.') }}"
+        cdh_build_number: "{{ cdh_version.split('.')[-1] }}"
+        spark3: "spark{{ spark_version.split('.')[0] }}"
+    
+    - name: Create necessary directories
+      file:
+        path: "{{ cldr_repos_path }}/{{ item }}"
+        state: directory
+      loop:
+        - cloudera-manager
+        - cloudera-manager/cm{{ cm_major_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/
+        - "{{ cdh7 }}/{{ cdh_version }}"
+        - "spark3/{{ spark_version }}"
+    
+    - name: Download Cloudera Manager repo files
+      get_url:
+        url: >-
+          https://{{ username }}:{{ password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/
+          {%- if item in ['allkeys.asc', 'allkeyssha256.asc'] -%}
+          {{ item }}
+          {%- else -%}
+          {{ os_version }}/yum/{{ item }}
+          {%- endif -%}
+        dest: "{{ cldr_repos_path }}/cloudera-manager/{{ item }}"
+      loop:
+        - cloudera-manager.repo
+        - cloudera-manager-trial.repo
+        - RPM-GPG-KEY-cloudera
+        - allkeys.asc
+        - allkeyssha256.asc
+    
+    # - name: Configure Cloudera Manager repo
+    #   template:
+    #     src: templates/cloudera-manager.repo.j2
+    #     dest: /etc/yum.repos.d/cloudera-manager.repo
+    
+    # - name: Configure PostgreSQL repo
+    #   template:
+    #     src: templates/postgresql.repo.j2
+    #     dest: /etc/yum.repos.d/postgresql.repo
+    
+    - name: Download Cloudera Manager RPMs
+      get_url:
+        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/{{ item }}"
+        dest: "{{ cldr_repos_path }}/cloudera-manager/cm{{ cm_major_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/"
+      loop:
+        - "cloudera-manager-agent-{{ cm_version }}-{{ cm_numeric_version }}.el{{ ansible_distribution_major_version }}.{{ ansible_architecture }}.rpm"
+        - "cloudera-manager-daemons-{{ cm_version }}-{{ cm_numeric_version }}.el{{ ansible_distribution_major_version }}.{{ ansible_architecture }}.rpm"
+        - "cloudera-manager-server-{{ cm_version }}-{{ cm_numeric_version }}.el{{ ansible_distribution_major_version }}.{{ ansible_architecture }}.rpm"
+        - "cloudera-manager-server-db-2-{{ cm_version }}-{{ cm_numeric_version }}.el{{ ansible_distribution_major_version }}.{{ ansible_architecture }}.rpm"
+    
+    - name: Download CDH Parcels
+      get_url:
+        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/{{ cdh7 }}/{{ cdh_version }}/parcels/CDH-{{ cdh_major_version }}-1.cdh{{ cdh_major_version }}.p{{ cdh_build_number }}.{{ cdh_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
+        dest: "{{ cldr_repos_path }}/{{ cdh7 }}/{{ cdh_version }}/"
+    
+    - name: Download Spark Parcels
+      get_url:
+        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/{{ spark3 }}/{{ spark_version }}/parcels/SPARK3-{{ spark_minor_version }}-1-1.{{ spark_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
+        dest: "{{ cldr_repos_path }}/{{ spark3 }}/{{ spark_version }}/"
+    
+    - name: Get public IP from ipify
+      uri:
+        url: "https://api.ipify.org/"
+        return_content: yes
+      register: public_ip_result
+
+    - name: Print the Public IP
+      debug:
+        msg: "The public IP of this machine ({{ ansible_fqdn }}) is {{ public_ip_result.content }}"
+
+    - name: Run createrepo
+      command: "createrepo --baseurl http://{{ public_ip_result.content }}/cloudera-repos/cloudera-manager/ {{ cldr_repos_path }}/cloudera-manager/"
+      args:
+        chdir: "{{ cldr_repos_path }}/cloudera-manager/"
+    
+    - name: Ensure services are started
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+
+
+# postgres repo disable
+# need to copy/update the repo file
+# ls the repo diectories

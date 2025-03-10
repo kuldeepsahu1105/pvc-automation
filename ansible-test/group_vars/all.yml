@@ -56,3 +56,17 @@ jdbc_driver_dest: "/usr/share/java/postgresql-connector-java.jar"
 
 # postgres database variables
 postgresql_version: 14
+
+# cldr-mngr repo setup variables
+cm_version: "7.11.3.28"
+cm_numeric_version: "60766845"
+cdh_version: "7.1.9.1023"
+cdh_numeric_version: "60818430"
+spark_version: "3.3.7191000.4"
+spark_minor_version: "3.3.2.3.3.7191000.4"
+spark_numeric_version: "p0.60728639"
+public_ip: "{{ ansible_default_ipv4.address }}"
+username: "<username>"
+password: "<password>"
+webserver_path: "/var/www/html"
+cldr_repos_path: "{{ webserver_path }}/cloudera-repos"
