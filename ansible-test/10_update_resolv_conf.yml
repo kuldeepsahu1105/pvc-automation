@@ -72,6 +72,7 @@
         owner: root
         group: root
         mode: "0644"
+        backup: yes
 
     - name: Verify new /etc/resolv.conf content
       ansible.builtin.command:
