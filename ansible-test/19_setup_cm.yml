@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 17_download_repos.yml
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
   hosts: localhost
@@ -15,7 +16,7 @@
   tasks:
     - name: Set Cloudera Manager API base URL
       ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:7180/api/v48"
+        cm_api_url: "http://{{ cm_host }}:7180/api/v54"
 
     - name: Authenticate with Cloudera Manager API
       ansible.builtin.uri:

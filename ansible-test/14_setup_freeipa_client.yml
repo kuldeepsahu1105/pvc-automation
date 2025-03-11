@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 13_setup_freeipa_client.yml
+### ansible-playbook -i inventory.ini 14_setup_freeipa_client.yml
 ---
 - name: Install FreeIPA client packages
   hosts: all:!ipaserver

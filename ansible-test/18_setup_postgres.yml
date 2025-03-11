@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 17_download_repos.yml
 - name: Install and Configure PostgreSQL with TLS/SSL for Cloudera Manager
   hosts: cloudera_manager
   become: true

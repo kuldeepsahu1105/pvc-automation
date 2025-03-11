@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 9_setup_freeipa_server.yml
+### ansible-playbook -i inventory.ini 10_setup_freeipa_server.yml
 ---
 - name: Install and Configure FreeIPA Server
   hosts: ipaserver

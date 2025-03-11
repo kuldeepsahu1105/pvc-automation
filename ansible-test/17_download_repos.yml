@@ -1,5 +1,4 @@
-### ansible-playbook -i inventory.ini 16_download_repos.yml
-
+### ansible-playbook -i inventory.ini 17_download_repos.yml
 ---
 - name: Setup Cloudera Manager and Dependencies
   hosts: cldr-mngr

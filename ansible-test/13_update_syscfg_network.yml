@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 12_update_syscfg_network.yml
+### ansible-playbook -i inventory.ini 13_update_syscfg_network.yml
 ---
 - name: Generate and configure /etc/resolv.conf file based on existing values
   hosts: all

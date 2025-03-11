@@ -1,3 +1,4 @@
+### ansible-playbook -i inventory.ini 9_verify_os_prereqs.yml
 ---
 - name: Tasks for remaining prereq on all the hosts
   hosts: all
@@ -49,51 +50,51 @@
       register: rc_local_status
     - debug: var=rc_local_status.stdout_lines
 
-#####
-- name: Tasks for remaining prereq on all the hosts
-  hosts: all:ipaserver
-  become: yes
-  become_user: root
-  roles:
-    - cdp_base_OS_prereq
+# #####
+# - name: Tasks for remaining prereq on all the hosts
+#   hosts: all:ipaserver
+#   become: yes
+#   become_user: root
+#   roles:
+#     - cdp_base_OS_prereq
 
-- name: Tasks for packages installation on all the CDP Base hosts
-  hosts: all
-  become: yes
-  become_user: root
-  tasks:
-    - name: install packages
-      yum:
-        name:
-          - ipa-client
-          - wget
-          - ntp
+# - name: Tasks for packages installation on all the CDP Base hosts
+#   hosts: all
+#   become: yes
+#   become_user: root
+#   tasks:
+#     - name: install packages
+#       yum:
+#         name:
+#           - ipa-client
+#           - wget
+#           - ntp
 
-- name: Tasks for packages installation on the freeipa server
-  hosts: ipaserver
-  become: yes
-  become_user: root
-  tasks:
-    - name: install packages
-      yum:
-        name:
-          - wget
-          - ntp
+# - name: Tasks for packages installation on the freeipa server
+#   hosts: ipaserver
+#   become: yes
+#   become_user: root
+#   tasks:
+#     - name: install packages
+#       yum:
+#         name:
+#           - wget
+#           - ntp
 
-- name: Reboot the freeipa server
-  hosts: ipaserver
-  become: yes
-  become_user: root
-  tasks:
-    - name: Reboot the FreeIPA server for Disabling SELinux
-      ansible.builtin.reboot:
-      when: ansible_facts.selinux.status == 'enabled'
+# - name: Reboot the freeipa server
+#   hosts: ipaserver
+#   become: yes
+#   become_user: root
+#   tasks:
+#     - name: Reboot the FreeIPA server for Disabling SELinux
+#       ansible.builtin.reboot:
+#       when: ansible_facts.selinux.status == 'enabled'
 
-- name: Reboot all the worker nodes
-  hosts: workers
-  become: yes
-  become_user: root
-  tasks:
-    - name: Reboot the machines
-      ansible.builtin.reboot:
-      when: ansible_facts.selinux.status == 'enabled'
+# - name: Reboot all the worker nodes
+#   hosts: workers
+#   become: yes
+#   become_user: root
+#   tasks:
+#     - name: Reboot the machines
+#       ansible.builtin.reboot:
+#       when: ansible_facts.selinux.status == 'enabled'
