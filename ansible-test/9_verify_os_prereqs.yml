@@ -12,16 +12,19 @@
     - name: Verify swappiness value
       shell: sysctl vm.swappiness
       register: swappiness_status
+      changed_when: false
     - debug: var=swappiness_status.stdout_lines
 
     - name: Verify enabled hugepage value
       shell: cat /sys/kernel/mm/transparent_hugepage/enabled
       register: enabled_hugepage_value
+      changed_when: false
     - debug: var=enabled_hugepage_value.stdout_lines
 
     - name: Verify defrag hugepage value
       shell: cat /sys/kernel/mm/transparent_hugepage/defrag
       register: defrag_hugepage_value
+      changed_when: false
     - debug: var=defrag_hugepage_value.stdout_lines
 
     - name: Print chronyd state
@@ -34,6 +37,7 @@
     - name: Verify if chronyd is enabled to run on reboot
       shell: systemctl is-enabled chronyd
       register: chronyd_enabled_status
+      changed_when: false
     - debug: var=chronyd_enabled_status.stdout_lines
 
     - name: Print firewalld state
@@ -48,6 +52,7 @@
     - name: Check rc.local
       shell: cat /etc/rc.d/rc.local
       register: rc_local_status
+      changed_when: false
     - debug: var=rc_local_status.stdout_lines
 
 # #####
