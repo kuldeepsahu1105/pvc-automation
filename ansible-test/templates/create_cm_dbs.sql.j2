@@ -1,0 +1,14 @@
+{% for db in databases %}
+CREATE ROLE {{ db.user }} LOGIN PASSWORD '{{ db.password }}';
+CREATE DATABASE {{ db.name }} OWNER {{ db.user }} ENCODING 'UTF8';
+GRANT ALL PRIVILEGES ON DATABASE {{ db.name }} TO {{ db.user }};
+{% endfor %}
+
+/* Special Configuration */
+ALTER DATABASE hive SET standard_conforming_strings=off;
+ALTER DATABASE oozie SET standard_conforming_strings=off;
+SELECT 1;
+
+SELECT * FROM pg_stat_ssl;
+SHOW ssl;
+SELECT name, setting FROM pg_settings WHERE name LIKE '%ssl%';

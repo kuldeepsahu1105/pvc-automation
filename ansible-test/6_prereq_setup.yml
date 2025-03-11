@@ -21,6 +21,7 @@
           - python3
           - python3-pip
           - gcc # Required for compiling some Python packages
+          - openssl
           - python3-devel # Required for some Python libraries
           - postgresql-libs # Ensures PostgreSQL dependencies are installed
         state: present

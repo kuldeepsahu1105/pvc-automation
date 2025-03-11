@@ -1,4 +1,20 @@
 ### ansible-playbook -i inventory.ini 17_download_repos.yml
+
+- name: Generate SQL script for CM databases and users
+  ansible.builtin.template:
+    src: templates/create_cm_dbs.sql.j2
+    dest: /tmp/create_cm_dbs.sql
+    owner: postgres
+    group: postgres
+    mode: "0600"
+
+- name: Execute the SQL script as postgres user
+  ansible.builtin.command:
+    cmd: "psql -f /tmp/create_cm_dbs.sql"
+  become: yes
+  become_user: postgres
+
+
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
   hosts: localhost

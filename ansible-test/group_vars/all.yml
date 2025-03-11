@@ -40,10 +40,11 @@ cert_days_valid: 3650
 
 # Variables for customizable certificate subject fields
 cert_country: "US"
-cert_state: "North Carolina"
+cert_state: "Santa Clara"
 cert_locality: "Raleigh"
-cert_organization: "Red Hat Inc"
+cert_organization: "Cloudera Inc"
 cert_organizational_unit: "CLDR"
+# cert_common_name: "cldr-mngr.cldrsetup.local"
 
 # The CN (Common Name) will be automatically set to the FQDN
 cert_subj: "/C={{ cert_country }}/ST={{ cert_state }}/L={{ cert_locality }}/O={{ cert_organization }}/OU={{ cert_organizational_unit }}/CN={{ ansible_fqdn }}"
@@ -54,8 +55,31 @@ postgres_jdbc_version: "42.7.5"  # Configurable version
 jdbc_driver_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgres_jdbc_version }}.jar"
 jdbc_driver_dest: "/usr/share/java/postgresql-connector-java.jar"
 
-# postgres database variables
-postgresql_version: 14
+# PostgreSQL database variables
+postgresql_version: 15
+postgres_data_dir: "/var/lib/pgsql/{{ postgresql_version }}/data"
+pg_client_crt_dir: "/root/.postgresql"
+postgres_user: "postgres"
+postgres_password: "postgres"
+postgres_db: "postgres"
+
+# PostgreSQL configuration template
+postgresql_port: 5432
+listen_addresses: "*"
+max_connections: 1000
+shared_buffers: "1024MB"
+wal_buffers: "16MB"
+max_wal_size: "6GB"
+min_wal_size: "512MB"
+checkpoint_completion_target: 0.9
+standard_conforming_strings: "off"
+jit: "off"
+
+# PostgreSQL database TLS/SSL variables
+enable_ssl: true
+ssl_ca_file: "root.crt"
+ssl_cert_file: "server.crt"
+ssl_key_file: "server.key"
 
 # cldr-mngr repo setup variables
 cm_version: "7.11.3.28"
@@ -70,3 +94,17 @@ username: "<username>"
 password: "<password>"
 webserver_path: "/var/www/html"
 cldr_repos_path: "{{ webserver_path }}/cloudera-repos"
+
+# cldr-mngr databases to be created on postgres external database
+databases:
+  - { name: "scm", user: "scm", password: "scm" }
+  - { name: "rman", user: "rman", password: "rman" }
+  - { name: "hue", user: "hue", password: "hue" }
+  - { name: "hive", user: "hive", password: "hive" }
+  - { name: "oozie", user: "oozie", password: "oozie" }
+  - { name: "ranger", user: "rangeradmin", password: "rangeradmin" }
+  - { name: "rangerkms", user: "rangerkms", password: "rangerkms" }
+  - { name: "schemaregistry", user: "schemaregistry", password: "schemaregistry" }
+  - { name: "yqm", user: "yqm", password: "yqm" }
+  - { name: "smm", user: "smm", password: "smm" }
+  - { name: "das", user: "das", password: "das" }
