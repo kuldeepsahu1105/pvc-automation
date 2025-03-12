@@ -127,29 +127,37 @@ run_playbook "7_prereq_setup_002.yml"
 echo "Running more prerequisite setup..."
 run_playbook "8_prereq_setup_003.yml"
 
+echo "Verifying OS Prereqs..."
+run_playbook "9_verify_os_prereqs.yml"
+
 echo "Setting up FreeIPA server..."
-run_playbook "9_setup_freeipa_server.yml"
+run_playbook "10_setup_freeipa_server.yml"
 
 echo "Configuring DNS records..."
-run_playbook "10_setup_dns_records.yml"
+run_playbook "11_setup_dns_records.yml"
 
 echo "Setting up /etc/resolv.conf file..."
-run_playbook "11_update_resolv_conf.yml"
+run_playbook "12_update_resolv_conf.yml"
 
 echo "Setting up /etc/sysconfig/network file..."
-run_playbook "12_update_syscfg_network.yml"
+run_playbook "13_update_syscfg_network.yml"
 
 echo "Setting up FreeIPA client..."
-run_playbook "13_setup_freeipa_client.yml"
+run_playbook "14_setup_freeipa_client.yml"
 
 echo "Setting up wildcard DNS Record..."
-run_playbook "14_setup_wildcard.yml"
+run_playbook "15_setup_wildcard.yml"
 
 echo "Setting up internal repository..."
-run_playbook "15_setup_internal_repo.yml"
+run_playbook "16_setup_internal_repo.yml"
 
 echo "Downloading CM, CDH and Spark repository files..."
-run_playbook "16_download_repos.yml"
+run_playbook "17_download_repos.yml"
 
+echo "Setting up postgres db..."
+run_playbook "18_setup_postgres.yml"
+
+echo "Setting up (installing) CM server..."
+run_playbook "19_start_cm.yml"
 # Print completion banner
 print_completion

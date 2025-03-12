@@ -1,41 +1,29 @@
 ### ansible-playbook -i inventory.ini 17_download_repos.yml
 ---
 - name: Install and Configure Cloudera Manager
-  hosts: cloudera_manager
+  hosts: cldr-mngr
   become: yes
-  vars:
-    db_host: "cldr-mngr.cldrsetup.local"
-    db_port: "5432"
-    db_name: "scm"
-    db_user: "scm"
-    db_password: "scm"
-    ssl_root_cert: "/var/lib/cloudera-scm-server/.postgresql/root.crt"
-    java_package: "java-17-openjdk"
-    cloudera_packages:
-      - cloudera-manager-agent
-      - cloudera-manager-daemons
-      - cloudera-manager-server
   tasks:
 
-    - name: Install OpenJDK
-      ansible.builtin.dnf:
-        name: "{{ java_package }}"
-        state: present
+    # - name: Install OpenJDK
+    #   ansible.builtin.dnf:
+    #     name: "{{ java_package }}"
+    #     state: present
 
     - name: Install Cloudera Manager packages
       ansible.builtin.dnf:
-        name: "{{ cloudera_packages }}"
+        name: "{{ cldr_mngr_packages }}"
         state: present
 
     - name: Configure Cloudera Manager Agent
       ansible.builtin.lineinfile:
         path: /etc/cloudera-scm-agent/config.ini
         regexp: '^server_host='
-        line: "server_host={{ db_host }}"
+        line: "server_host={{ ansible_fqdn }}"
 
     - name: Create PostgreSQL SSL directory
       ansible.builtin.file:
-        path: /var/lib/cloudera-scm-server/.postgresql
+        path: "{{ cm_db_ssl_crt_dir }}"
         state: directory
         owner: cloudera-scm
         group: cloudera-scm
@@ -43,8 +31,8 @@
 
     - name: Copy PostgreSQL root certificate
       ansible.builtin.copy:
-        src: "/var/lib/pgsql/14/data/root.crt"
-        dest: "{{ ssl_root_cert }}"
+        src: "{{ postgres_data_dir }}/root.crt"
+        dest: "{{ cm_db_root_crt }}"
         remote_src: yes
         owner: cloudera-scm
         group: cloudera-scm
@@ -65,10 +53,28 @@
       ansible.builtin.command:
         cmd: >
           /opt/cloudera/cm/schema/scm_prepare_database.sh -h{{ ansible_fqdn }}
-          --jdbc-url "jdbc:postgresql://{{ ansible_fqdn }}:{{ db_port }}/{{ db_name }}?ssl=true&sslmode=verify-ca&sslrootcert={{ ssl_root_cert }}"
-          postgresql {{ db_name }} {{ postgres_user }} {{ postgres_password }} --ssl
+          --jdbc-url "jdbc:postgresql://{{ ansible_fqdn }}:{{ postgres_port }}/{{ scm_db_name }}?ssl=true&sslmode=verify-ca&sslrootcert={{ cm_db_root_crt }}"
+          postgresql {{ scm_db_name }} {{ scm_db_user }} {{ scm_db_password }} --ssl
       register: scm_db_output
       changed_when: "'Successfully connected to database.' in scm_db_output.stdout"
+
+    - name: Print the updated config.ini file
+      ansible.builtin.command:
+        cmd: cat /etc/cloudera-scm-agent/config.ini
+      register: config_ini_output
+
+    - name: Display config.ini contents
+      ansible.builtin.debug:
+        msg: "{{ config_ini_output.stdout_lines }}"
+
+    - name: Print the updated db.properties file
+      ansible.builtin.command:
+        cmd: cat /etc/cloudera-scm-server/db.properties
+      register: db_properties_output
+
+    - name: Display db.properties contents
+      ansible.builtin.debug:
+        msg: "{{ db_properties_output.stdout_lines }}"
 
     - name: Enable and Start Cloudera Manager Services
       ansible.builtin.systemd:

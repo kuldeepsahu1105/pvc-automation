@@ -64,7 +64,7 @@ postgres_password: "postgres"
 postgres_db: "postgres"
 
 # PostgreSQL configuration template
-postgresql_port: 5432
+postgres_port: 5432
 listen_addresses: "*"
 max_connections: 1000
 shared_buffers: "1024MB"
@@ -95,9 +95,20 @@ password: "<password>"
 webserver_path: "/var/www/html"
 cldr_repos_path: "{{ webserver_path }}/cloudera-repos"
 
+# cldr-mngr: scm config
+scm_db_name: "scm"
+scm_db_user: "scm"
+scm_db_password: "scm"
+cm_db_ssl_crt_dir: "/var/lib/cloudera-scm-server/.postgresql"
+cm_db_root_crt: "{{ cm_db_ssl_crt_dir }}/root.crt"
+cldr_mngr_packages:
+  - cloudera-manager-agent
+  - cloudera-manager-daemons
+  - cloudera-manager-server
+
 # cldr-mngr databases to be created on postgres external database
 databases:
-  - { name: "scm", user: "scm", password: "scm" }
+  - { name: "{{ scm_db_name }}", user: "{{ scm_db_user }}", password: "{{ scm_db_password }}" }
   - { name: "rman", user: "rman", password: "rman" }
   - { name: "hue", user: "hue", password: "hue" }
   - { name: "hive", user: "hive", password: "hive" }
