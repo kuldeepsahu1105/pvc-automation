@@ -1,0 +1,118 @@
+### ansible-playbook -i inventory.ini 20_setup_cm.yml
+---
+- name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
+  hosts: localhost
+  gather_facts: no
+  vars:
+    cm_user: "admin"
+    cm_password: "admin"
+    cluster_name: "CDH-Cluster"
+    cdh_version: "{{ cdh_version }}" # Fetch from group vars or defaults
+    parcel_repo: "https://archive.cloudera.com/cdh7/{{ cdh_version }}/parcels/"
+    license_file: "/path/to/license.txt"
+    kerberos_principal: "admin/admin@EXAMPLE.COM"
+    kerberos_password: "kerberos_password"
+    license_file_name: "license.json"
+
+  tasks:
+    - name: Set Cloudera Manager Host IP
+      ansible.builtin.set_fact:
+        cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
+
+    - name: Debug cm_host
+      ansible.builtin.debug:
+        msg: "cm_host is set to {{ cm_host }}"
+
+    - name: Set Cloudera Manager API base URL
+      ansible.builtin.set_fact:
+        cm_api_url: "http://{{ cm_host }}:7180/api/v54"
+
+    - name: Debug cm_api URL
+      ansible.builtin.debug:
+        msg: "cm_api_url is set to {{ cm_api_url }}"
+
+    - name: Authenticate with Cloudera Manager API
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/version"
+        method: GET
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: cm_version
+
+    - name: Print Cloudera Manager API Version Response
+      ansible.builtin.debug:
+        msg: "Cloudera Manager API Version: {{ cm_version.json }}"
+
+    - name: Print Cloudera Manager API Version and Build Timestamp
+      ansible.builtin.debug:
+        msg: "Cloudera Manager Version: {{ cm_version.json.version }}, Build Timestamp: {{ cm_version.json.buildTimestamp }}"
+
+    - name: Check existing Cloudera Manager license
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/license"
+        method: GET
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200, 404] # 404 if no license installed
+      register: cm_license_status
+      changed_when: false
+
+    - name: Print Cloudera Manager License Status
+      ansible.builtin.debug:
+        msg: "Cloudera Manager License: {{ 'Installed' if cm_license_status.status == 200 else 'Not Installed' }}"
+
+    - name: Check Cloudera SCM Server service status
+      ansible.builtin.shell: "systemctl is-active cloudera-scm-server"
+      register: scm_server_status
+      delegate_to: cldr-mngr
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Print Cloudera SCM Server Service Status
+      ansible.builtin.debug:
+        msg: "Cloudera SCM Server is {{ scm_server_status.stdout | default('not running') }}"
+
+    - name: Check Cloudera Manager Service status
+      ansible.builtin.shell: systemctl status cloudera-scm-server --no-pager
+      delegate_to: cldr-mngr
+      register: cm_status_output
+      changed_when: false
+
+    - name: Display Cloudera Manager Service status
+      ansible.builtin.debug:
+        msg: "{{ cm_status_output.stdout }}"
+
+    - name: Check Cloudera Management Services Status
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/service"
+        method: GET
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: cm_service_status
+      failed_when: false
+
+    - name: Print Cloudera Management Services Status
+      ansible.builtin.debug:
+        msg: "Cloudera Management Service Status: {{ cm_service_status.json.message }} [status-code: {{ cm_service_status.status }}]"
+
+    - name: List available clusters in Cloudera Manager
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/clusters"
+        method: GET
+        user: "{{ cm_user }}"
+        password: "{{ cm_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: cm_clusters
+
+    - name: Print Available Clusters
+      ansible.builtin.debug:
+        msg: "Available Clusters: {{ cm_clusters.json['items'] }}"
+        # msg: "Available Clusters: {{ cm_clusters.json.items | map(attribute='name') | list }}"

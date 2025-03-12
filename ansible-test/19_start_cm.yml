@@ -81,6 +81,17 @@
         msg: "{{ config_ini_output.stdout_lines }}"
 
     ##### Start the Cloudera Manager Server and Verify
+    ##### Start and Enable Cloudera Manager Server
+    - name: Ensure Cloudera Manager services (Server and Agent) are enabled and started
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - cloudera-scm-server
+        - cloudera-scm-agent
+      register: cm_services_status
+
     - name: Check if Cloudera Manager Server is already running
       ansible.builtin.shell: |
         systemctl is-active cloudera-scm-server
