@@ -70,7 +70,7 @@
         {% if reverse_zones == 'no' %} --no-reverse {% endif %}
         {% if chrony_enabled == 'yes' %} --ntp-server=pool.ntp.org {% endif %}
       register: ipa_install_result
-      changed_when: "'The ipa-server-install command was successful' in ipa_install_result.stdout"
+      changed_when: "'The ipa-server-install command was successful' in ipa_install_result.stderr"
       when: not ipa_server_config.stat.exists
 
     - name: Print IPA server installation output
