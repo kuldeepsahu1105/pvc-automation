@@ -4,26 +4,26 @@
 
 # Free-IPA Server
 {% for host in groups['ipaserver'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}
 
 # Cloudera Manager Server
 {% for host in groups['cldr-mngr'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}
 
 # PvC Base Cluster Nodes
 {% for host in groups['base-masters'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}
 {% for host in groups['base-workers'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}
 
 # PvC Data Services ECS Cluster Nodes
 {% for host in groups['ecs-masters'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}
 {% for host in groups['ecs-workers'] %}
-{{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
+{{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['cldr_hostname'] }}.{{ ipaserver_domain }} {{ hostvars[host]['cldr_hostname'] }}
 {% endfor %}

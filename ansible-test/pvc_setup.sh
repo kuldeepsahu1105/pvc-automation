@@ -19,6 +19,14 @@ print_completion() {
     echo "================================================================="
 }
 
+# Function to print a fancy banner
+print_message() {
+    echo "================================================================="
+    echo "            🚀 $(echo $1) 🚀          "
+    echo "================================================================="
+    echo ""
+}
+
 # Print welcome banner
 print_banner
 
@@ -31,20 +39,20 @@ python3 --version
 pip3 --version
 ansible --version
 
-# Clone or update repository
-if [ -d "pvc-automation" ]; then
-    echo "Repository already exists. Pulling latest changes..."
-    cd pvc-automation
-    git reset --hard
-    git clean -fd
-    git pull origin main
-else
-    echo "Cloning the repository..."
-    git clone https://github.com/kuldeepsahu1105/pvc-automation.git
-    cd pvc-automation
-fi
+# # Clone or update repository
+# if [ -d "pvc-automation" ]; then
+#     echo "Repository already exists. Pulling latest changes..."
+#     cd pvc-automation
+#     git reset --hard
+#     git clean -fd
+#     git pull origin main
+# else
+#     echo "Cloning the repository..."
+#     git clone https://github.com/kuldeepsahu1105/pvc-automation.git
+#     cd pvc-automation
+# fi
 
-cd ansible-test/
+# cd ansible-test/
 
 # Find private key file
 PRIVATE_KEY=$(find . -maxdepth 1 -type f \( -name "*.pem" -o -name "id_rsa" \) | head -n 1)
@@ -100,64 +108,64 @@ run_playbook() {
 #     ansible-playbook -i inventory.ini "$playbook"
 # done
 
-echo "Running Ansible playbooks..."
+print_message "Running Ansible playbooks..."
 
-echo "Installing collection dependencies..."
+print_message "Installing collection dependencies..."
 run_playbook "1_install_collection.yml"
 
-echo "Setting hostname..."
+print_message "Setting hostname..."
 run_playbook "2_set_hostname.yml"
 
-echo "Creating /etc/hosts entries..."
+print_message "Creating /etc/hosts entries..."
 run_playbook "3_create_etc_hosts.yml"
 cat /etc/hosts
 
-echo "Setting up autossh..."
+print_message "Setting up autossh..."
 run_playbook "4_setup_autossh.yml"
 
-echo "Disabling SELinux..."
+print_message "Disabling SELinux..."
 run_playbook "5_disable_selinux.yml"
 
-echo "Running prerequisite setup..."
+print_message "Running prerequisite setup..."
 run_playbook "6_prereq_setup.yml"
 
-echo "Running additional prerequisite setup..."
+print_message "Running additional prerequisite setup..."
 run_playbook "7_prereq_setup_002.yml"
 
-echo "Running more prerequisite setup..."
+print_message "Running more prerequisite setup..."
 run_playbook "8_prereq_setup_003.yml"
 
-echo "Verifying OS Prereqs..."
+print_message "Verifying OS Prereqs..."
 run_playbook "9_verify_os_prereqs.yml"
 
-echo "Setting up FreeIPA server..."
+print_message "Setting up FreeIPA server..."
 run_playbook "10_setup_freeipa_server.yml"
 
-echo "Configuring DNS records..."
+print_message "Configuring DNS records..."
 run_playbook "11_setup_dns_records.yml"
 
-echo "Setting up /etc/resolv.conf file..."
+print_message "Setting up /etc/resolv.conf file..."
 run_playbook "12_update_resolv_conf.yml"
 
-echo "Setting up /etc/sysconfig/network file..."
+print_message "Setting up /etc/sysconfig/network file..."
 run_playbook "13_update_syscfg_network.yml"
 
-echo "Setting up FreeIPA client..."
+print_message "Setting up FreeIPA client..."
 run_playbook "14_setup_freeipa_client.yml"
 
-echo "Setting up wildcard DNS Record..."
+print_message "Setting up wildcard DNS Record..."
 run_playbook "15_setup_wildcard.yml"
 
-echo "Setting up internal repository..."
+print_message "Setting up internal repository..."
 run_playbook "16_setup_internal_repo.yml"
 
-echo "Downloading CM, CDH and Spark repository files..."
+print_message "Downloading CM, CDH and Spark repository files..."
 run_playbook "17_download_repos.yml"
 
-echo "Setting up postgres db..."
+print_message "Setting up postgres db..."
 run_playbook "18_setup_postgres.yml"
 
-echo "Setting up (installing) CM server..."
+print_message "Setting up (installing) CM server..."
 run_playbook "19_start_cm.yml"
 # Print completion banner
 print_completion

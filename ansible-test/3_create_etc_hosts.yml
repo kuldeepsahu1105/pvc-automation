@@ -71,6 +71,7 @@
       shell: ip addr show | grep "$(hostname -i)"
       register: ip_match_hostname
       changed_when: false
+      # failed_when: false
 
     - name: Print IP matching Hostname
       debug:

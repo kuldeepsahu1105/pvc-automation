@@ -7,7 +7,7 @@
   tasks:
     - name: Get ECS Master IP dynamically
       set_fact:
-        ecs_master_ip: "{{ hostvars[groups['ecs-masters'][0]]['inventory_hostname'] }}"
+        ecs_master_ip: "{{ hostvars[groups['ecs-masters'][0]]['ansible_host'] | default(hostvars[groups['ecs-masters'][0]]['ansible_default_ipv4']['address']) }}"
 
     - name: Debug ECS Master IP
       debug:
@@ -22,21 +22,21 @@
         record_value: "{{ ecs_master_ip }}"
         state: present
 
-    - name: Verify Created DNS Records in FreeIPA
-      command: ipa dnsrecord-find {{ reverse_dns_zone }} --name=*.apps
+    - name: Verify Created Wildcard DNS Records in FreeIPA
+      shell: "ipa dnsrecord-find {{ ipaserver_domain }} --name=*.apps"
       register: ipa_dns_records
       changed_when: false
 
-    - name: Debug FreeIPA DNS Records
+    - name: Print Wildacard FreeIPA DNS Records
       debug:
         msg: "{{ ipa_dns_records.stdout_lines }}"
 
-    - name: Validate DNS resolution using nslookup
+    - name: Validate Wildcard DNS resolution using nslookup
       command: "nslookup console-cdp.apps.{{ ipaserver_domain }}"
       register: nslookup_output
       changed_when: false
 
-    - name: Display nslookup output for DNS
+    - name: Display nslookup output for Wildcard DNS lookup
       debug:
         msg: "{{ nslookup_output.stdout.replace('\t', '    ').split('\n') }}"
 

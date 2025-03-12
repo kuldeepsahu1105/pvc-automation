@@ -15,7 +15,6 @@ ipaadmin_principal: "admin"
 ipaadmin_password: "vmware123"
 ipadm_password: "{{ ipaadmin_password }}"
 ipaserver_setup_dns: yes
-ipaserver_auto_forwarders: yes
 ipaserver_install_packages: no
 ipaserver_setup_firewalld: no
 dns_forwarders: "no"
