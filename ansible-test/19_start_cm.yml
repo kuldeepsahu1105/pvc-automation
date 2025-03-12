@@ -1,15 +1,15 @@
-### ansible-playbook -i inventory.ini 17_download_repos.yml
+### ansible-playbook -i inventory.ini 19_start_cm.yml
 ---
 - name: Install and Configure Cloudera Manager
   hosts: cldr-mngr
   become: yes
   tasks:
-
     # - name: Install OpenJDK
     #   ansible.builtin.dnf:
     #     name: "{{ java_package }}"
     #     state: present
 
+    ##### Install the Cloudera Manager Server package
     - name: Install Cloudera Manager packages
       ansible.builtin.dnf:
         name: "{{ cldr_mngr_packages }}"
@@ -18,7 +18,7 @@
     - name: Configure Cloudera Manager Agent
       ansible.builtin.lineinfile:
         path: /etc/cloudera-scm-agent/config.ini
-        regexp: '^server_host='
+        regexp: "^server_host="
         line: "server_host={{ ansible_fqdn }}"
 
     - name: Create PostgreSQL SSL directory
@@ -27,7 +27,7 @@
         state: directory
         owner: cloudera-scm
         group: cloudera-scm
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy PostgreSQL root certificate
       ansible.builtin.copy:
@@ -36,7 +36,7 @@
         remote_src: yes
         owner: cloudera-scm
         group: cloudera-scm
-        mode: '0644'
+        mode: "0644"
 
     - name: Configure Ranger SSL
       ansible.builtin.copy:
@@ -49,6 +49,7 @@
         path: "/opt/cloudera/cm/lib/postgresql-42.*.jar"
         state: absent
 
+    ##### Generate db.properties file
     - name: Run scm_prepare_database.sh script
       ansible.builtin.command:
         cmd: >
@@ -58,35 +59,60 @@
       register: scm_db_output
       changed_when: "'Successfully connected to database.' in scm_db_output.stdout"
 
-    - name: Print the updated config.ini file
-      ansible.builtin.command:
-        cmd: cat /etc/cloudera-scm-agent/config.ini
-      register: config_ini_output
-
-    - name: Display config.ini contents
-      ansible.builtin.debug:
-        msg: "{{ config_ini_output.stdout_lines }}"
-
+    ##### Verify the Cloudera Manager Server updated configs
     - name: Print the updated db.properties file
       ansible.builtin.command:
         cmd: cat /etc/cloudera-scm-server/db.properties
       register: db_properties_output
+      changed_when: false
 
     - name: Display db.properties contents
       ansible.builtin.debug:
         msg: "{{ db_properties_output.stdout_lines }}"
 
-    - name: Enable and Start Cloudera Manager Services
-      ansible.builtin.systemd:
-        name: "{{ item }}"
-        enabled: yes
-        state: started
-      loop:
-        - cloudera-scm-server
-        - cloudera-scm-agent
-
-    - name: Check Cloudera Manager Server Logs
+    - name: Print the updated config.ini file with updated server details
       ansible.builtin.command:
-        cmd: tail -f /var/log/cloudera-scm-server/cloudera-scm-server.log
-      async: 300
-      poll: 10
+        cmd: grep server /etc/cloudera-scm-agent/config.ini
+      register: config_ini_output
+      changed_when: false
+
+    - name: Display config.ini content with updated server details
+      ansible.builtin.debug:
+        msg: "{{ config_ini_output.stdout_lines }}"
+
+    ##### Start the Cloudera Manager Server and Verify
+    - name: Check if Cloudera Manager Server is already running
+      ansible.builtin.shell: |
+        systemctl is-active cloudera-scm-server
+      register: cm_status
+      changed_when: false
+      failed_when: cm_status.rc > 1 # Fail only if command itself fails (not if service is inactive)
+
+    - name: Print Cloudera SCM Server startup status - ALREADY RUNNING
+      ansible.builtin.debug:
+        msg: "✅ Cloudera SCM Server is already running!"
+      when: cm_status.stdout == "active"
+
+    - name: Wait for Cloudera Manager Server to start or detect active status
+      ansible.builtin.shell: |
+        timeout 300 bash -c '
+          while true; do
+            systemctl is-active cloudera-scm-server | grep -q "active" && exit 0
+            tail -n 50 -f /var/log/cloudera-scm-server/cloudera-scm-server.log | grep -q "Started Jetty Server" && exit 0
+            sleep 5
+          done
+        '
+      register: cm_start_status
+      changed_when: false
+      failed_when: cm_start_status.rc != 0
+      when: cm_status.stdout != "active"
+
+    - name: Print Cloudera SCM Server startup status - SUCCESS
+      ansible.builtin.debug:
+        msg: "✅ Cloudera SCM Server successfully started!"
+      when: cm_status.stdout == "active" or (cm_start_status is defined and cm_start_status.rc == 0)
+
+    - name: Print Cloudera SCM Server startup status - FAILURE
+      ansible.builtin.debug:
+        msg: "❌ Cloudera SCM Server failed to start within timeout!"
+      when: cm_status.stdout != "active" and (cm_start_status is defined and cm_start_status.rc != 0)

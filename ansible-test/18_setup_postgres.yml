@@ -10,6 +10,7 @@
     #     state: absent
     #     disable_modular_repos: yes
 
+    ##### Install PostgreSQL database package
     - name: "Install PostgreSQL {{ postgresql_version }}"
       dnf:
         name:
@@ -18,31 +19,17 @@
           - postgresql{{ postgresql_version }}-libs
         state: present
 
-    - name: Deploy updated PostgreSQL configuration files
-      ansible.builtin.template:
-        src: "templates/{{ item.src }}"
-        dest: "{{ postgres_data_dir }}/{{ item.dest }}"
-        owner: "{{ postgres_user }}"
-        group: "{{ postgres_user }}"
-        mode: "0600"
-        backup: yes
-      loop:
-        - { src: "pg_hba.conf.j2", dest: "pg_hba.conf" }
-        - { src: "postgresql.conf.j2", dest: "postgresql.conf" }
-
-    - name: Ensure LC_ALL is set to C.UTF-8
-      ansible.builtin.lineinfile:
-        path: /etc/locale.conf
-        line: '{{ item }}="C.UTF-8"'
-        create: yes
-        backup: yes
-      loop:
-        - LANG
-        - LC_CTYPE
-
     ##### Initialize database
+    ##### Check if PostgreSQL data directory exists
+    - name: Check if PostgreSQL data directory exists
+      stat:
+        path: "{{ postgres_data_dir }}/PG_VERSION"
+      register: pg_data_stat
+
+    ##### Initialize database only if data directory does not exist
     - name: Initialize PostgreSQL database
       ansible.builtin.command: "/usr/pgsql-{{ postgresql_version }}/bin/postgresql-{{ postgresql_version }}-setup initdb"
+      when: not pg_data_stat.stat.exists
       args:
         creates: "{{ postgres_data_dir }}/PG_VERSION"
 
@@ -73,6 +60,30 @@
       ansible.builtin.debug:
         msg: "Psycopg2 version: {{ psycopg2_check_pip.stdout }}"
       when: psycopg2_check_pip is defined
+
+    ##### Postgres Configuration updates
+    - name: Deploy updated PostgreSQL configuration files
+      ansible.builtin.template:
+        src: "templates/{{ item.src }}"
+        dest: "{{ postgres_data_dir }}/{{ item.dest }}"
+        owner: "{{ postgres_user }}"
+        group: "{{ postgres_user }}"
+        mode: "0600"
+        backup: yes
+      loop:
+        - { src: "pg_hba.conf.j2", dest: "pg_hba.conf" }
+        - { src: "postgresql.conf.j2", dest: "postgresql.conf" }
+
+    - name: Ensure LC_ALL is set to C.UTF-8
+      ansible.builtin.lineinfile:
+        path: /etc/locale.conf
+        line: '{{ item }}="C.UTF-8"'
+        create: yes
+        backup: yes
+      loop:
+        - LANG
+        - LC_CTYPE
+
 
 ##### TLS Setup for Postgres DB
 - name: Setup PostgreSQL with TLS/SSL for Cloudera Manager

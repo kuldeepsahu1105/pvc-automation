@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 19_setup_cm.yml
+### ansible-playbook -i inventory.ini 20_setup_cm.yml
 
 - name: Generate SQL script for CM databases and users
   ansible.builtin.template:
@@ -13,7 +13,6 @@
     cmd: "psql -f /tmp/create_cm_dbs.sql"
   become: yes
   become_user: postgres
-
 
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API

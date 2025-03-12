@@ -55,6 +55,7 @@
       changed_when: false
     - debug: var=rc_local_status.stdout_lines
 
+
 # #####
 # - name: Tasks for remaining prereq on all the hosts
 #   hosts: all:ipaserver
