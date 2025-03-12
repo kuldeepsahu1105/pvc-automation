@@ -64,9 +64,9 @@
     - name: Run scm_prepare_database.sh script
       ansible.builtin.command:
         cmd: >
-          /opt/cloudera/cm/schema/scm_prepare_database.sh -h{{ db_host }}
-          --jdbc-url "jdbc:postgresql://{{ db_host }}:{{ db_port }}/{{ db_name }}?ssl=true&sslmode=verify-ca&sslrootcert={{ ssl_root_cert }}"
-          postgresql {{ db_name }} {{ db_user }} {{ db_password }} --ssl
+          /opt/cloudera/cm/schema/scm_prepare_database.sh -h{{ ansible_fqdn }}
+          --jdbc-url "jdbc:postgresql://{{ ansible_fqdn }}:{{ db_port }}/{{ db_name }}?ssl=true&sslmode=verify-ca&sslrootcert={{ ssl_root_cert }}"
+          postgresql {{ db_name }} {{ postgres_user }} {{ postgres_password }} --ssl
       register: scm_db_output
       changed_when: "'Successfully connected to database.' in scm_db_output.stdout"
 

@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 17_download_repos.yml
+### ansible-playbook -i inventory.ini 19_setup_cm.yml
 
 - name: Generate SQL script for CM databases and users
   ansible.builtin.template:
