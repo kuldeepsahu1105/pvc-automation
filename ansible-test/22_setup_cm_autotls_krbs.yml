@@ -24,11 +24,22 @@
       ansible.builtin.debug:
         msg: "cm_host is set to {{ cm_host }}"
 
-    - name: Set Cloudera Manager API base URL
-      ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/v54"
+    - name: Get Cloudera Manager API version
+      uri:
+        url: http://{{ cm_host }}:{{ cm_port }}/api/version
+        method: GET
+        status_code: 200
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        return_content: yes
+      register: result
 
-    - name: Debug cm_api URL
+    # Set base CM API URL
+    - set_fact:
+        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/{{ result.content }}"
+
+    - name: Print cm_api_url
       ansible.builtin.debug:
         msg: "cm_api_url is set to {{ cm_api_url }}"
 

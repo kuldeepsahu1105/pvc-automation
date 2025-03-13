@@ -1,20 +1,8 @@
 ### ansible-playbook -i inventory.ini 20_verify_cm.yml
-
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
   hosts: localhost
   gather_facts: no
-  vars:
-    cm_admin_user: "admin"
-    cm_admin_pass: "admin"
-    cluster_name: "CDH-Cluster"
-    cdh_version: "7.1.9"
-    parcel_repo: "https://archive.cloudera.com/cdh7/7.1.9/parcels/"
-    kerberos_principal: "admin/admin@EXAMPLE.COM"
-    kerberos_password: "kerberos_password"
-    license_file_name: "license.txt"
-    scm_default_user: "admin"
-    scm_default_pass: "admin"
   tasks:
     - name: Set Cloudera Manager Host IP
       ansible.builtin.set_fact:
@@ -24,83 +12,24 @@
       ansible.builtin.debug:
         msg: "cm_host is set to {{ cm_host }}"
 
-    - name: Set Cloudera Manager API base URL
-      ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/v54"
+    - name: Get Cloudera Manager API version
+      uri:
+        url: http://{{ cm_host }}:{{ cm_port }}/api/version
+        method: GET
+        status_code: 200
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        return_content: yes
+      register: result
 
-    - name: Debug cm_api URL
+    # Set base CM API URL
+    - set_fact:
+        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/{{ result.content }}"
+
+    - name: Print cm_api_url
       ansible.builtin.debug:
         msg: "cm_api_url is set to {{ cm_api_url }}"
-
-    - name: Check if license file exists
-      stat:
-        path: "{{ license_file_name }}"
-      register: file
-
-    - name: Print license file existence
-      debug:
-        msg: "License file '{{ license_file_name }}' exists = {{ file.stat.exists }}"
-        verbosity: 1
-
-    - name: Upload license file to Cloudera Manager
-      shell: >
-        curl -u {{ scm_default_user }}:{{ scm_default_pass }} \
-        -X POST -H 'Content-Type:multipart/form-data' \
-        -F license=@{{ license_file_name }} \
-        {{ cm_api_url }}/cm/license
-
-      register: resp
-      # args:
-      #   warn: False
-      # http://172.31.20.161:{{ cm_port }}/api/v54/cm/license
-      failed_when: "'name' not in resp.stdout"
-      notify:
-        - Restart cloudera-scm-server
-      when: file.stat.exists
-
-    - name: Print response from license upload
-      debug:
-        var: resp
-        verbosity: 1
-
-    - name: Begin Cloudera Manager trial license
-      uri:
-        url: "{{ cm_api_url }}/cm/trial/begin"
-        method: POST
-        status_code: [200, 204, 400]
-        force_basic_auth: yes
-        user: "{{ scm_default_user }}"
-        password: "{{ scm_default_pass }}"
-      notify:
-        - restart cloudera-scm-server
-      when: not file.stat.exists
-
-    - meta: flush_handlers
-
-  handlers:
-    - name: Restart cloudera-scm-server
-      systemd:
-        name: cloudera-scm-server
-        state: restarted
-      delegate_to: cldr-mngr
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     - name: Check existing Cloudera Manager license
       ansible.builtin.uri:
@@ -110,185 +39,109 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         return_content: yes
-        status_code: [200, 404]  # 404 if no license installed
-      register: cm_license_status
+        status_code: [200, 404] # 404 if no license installed
+      register: cm_license_info
       changed_when: false
 
-    - name: Check if Cloudera Manager license file exists
+    - name: Print existing cloudera manager license status
+      ansible.builtin.debug:
+        msg: |
+          =====License status:=====
+
+          License Owner: {{ cm_license_info.json.owner }}
+          License UUID: {{ cm_license_info.json.uuid }}
+          Expiration Date: {{ cm_license_info.json.expiration }}
+
+          Features Enabled:
+          {% for feature in cm_license_info.json.features if feature.enabled %}
+            - {{ feature.name }}: {{ feature.description }}
+          {% endfor %}
+
+      when: cm_license_info.status != 404
+
+    - name: Check if Cloudera Manager license file exists (on local)
       ansible.builtin.stat:
         path: "{{ license_file_name }}"
-      register: license_status
-      when: cm_license_status.status == 404  # Upload only if license is missing
+      register: license_file_status
+      when: cm_license_info.status == 404 # Upload only if license is missing
 
-    - name: Upload Cloudera Manager license
-      ansible.builtin.uri:
-        url: "{{ cm_api_url }}/cm/license"
+    - name: Print license file existence (on local)
+      debug:
+        msg: "License file '{{ license_file_name }}' exists = {{ license_file_status.stat.exists }}"
+        # verbosity: 1
+      when: cm_license_info.status == 404 # Upload only if license is missing
+
+    - name: Upload license file to Cloudera Manager (if license is not already uploaded)
+      shell: >
+        curl -u {{ cm_admin_user }}:{{ cm_admin_pass }} \
+        -X POST -H 'Content-Type:multipart/form-data' \
+        -F license=@{{ license_file_name }} \
+        {{ cm_api_url }}/cm/license
+      register: license_upload_response
+      # http://172.31.20.161:{{ cm_port }}/api/v54/cm/license
+      failed_when: "'owner' not in license_upload_response.stdout"
+      notify:
+        - Restart cloudera-scm-server
+      when: cm_license_info.status == 404 and license_file_status.stat.exists
+
+    - name: Print response from license upload
+      debug:
+        var: license_upload_response
+        # verbosity: 1
+      when: cm_license_info.status == 404 and license_file_status.stat.exists
+
+    - name: Print License Upload Status
+      ansible.builtin.debug:
+        msg: "✅ License file uploaded successfully!"
+      when: cm_license_info.status == 404 and license_file_status.stat.exists
+
+    - name: Enable Cloudera Manager trial license
+      uri:
+        url: "{{ cm_api_url }}/cm/trial/begin"
         method: POST
+        status_code: [200, 204, 400]
+        force_basic_auth: yes
         user: "{{ cm_admin_user }}"
         password: "{{ cm_admin_pass }}"
-        force_basic_auth: yes
-  #     body_format: form-multipart
-        body_format: json
-        headers:
-          Content-Type: "application/json"
-        body:
-          license: "{{ lookup('file', license_file_name) | b64encode }}"
-      when: cm_license_status.status == 404 and license_status.stat.exists
-      register: license_upload_response
-
-
-    # - name: Enable Cloudera Manager Trial License
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/cm/trialLicense"
-    #     method: POST
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     status_code: 200
-    #   when: not license_status.stat.exists
-    #   register: trial_license_response
-
-    # - name: Print License Upload Status
-    #   ansible.builtin.debug:
-    #     msg: "✅ License file uploaded successfully!"
-    #   when: license_status.stat.exists
+      notify:
+        - Restart cloudera-scm-server
+      when:
+        - cm_license_info is defined
+        - cm_license_info.status is defined
+        - cm_license_info.status == 404
+        - not license_file_status.stat.exists
+      register: trial_license_response
 
     - name: Print Trial License Activation Status
       ansible.builtin.debug:
-        msg: "🔄 Started Cloudera Manager with Trial License! (License file not found in current directory)"
-      when: not license_status.stat.exists
+        msg: "⚡ ⏳ Started Cloudera Manager with Trial License! (as License file not found in current directory)"
+      when:
+        - cm_license_info is defined
+        - cm_license_info.status is defined
+        - cm_license_info.status == 404
+        - not license_file_status.stat.exists
 
+    - meta: flush_handlers
 
-    # - name: Enable Cloudera Management Services
+  handlers:
+    - name: Restart cloudera-scm-server
+      systemd:
+        name: cloudera-scm-server
+        state: restarted
+      delegate_to: "{{ cm_host }}"
+
+    # - name: Upload Cloudera Manager license
     #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/cm/service"
-    #     method: PUT
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     body_format: json
-    #     body:
-    #       items:
-    #         - name: "Cloudera Management Service"
-    #           type: "MGMT"
-    #     status_code: 200
-    #   register: management_services
-
-    # - name: Configure AutoTLS
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/cm/config"
-    #     method: PUT
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     body_format: json
-    #     body:
-    #       items:
-    #         - name: "SECURITY_AUTO_TLS"
-    #           value: "true"
-    #     status_code: 200
-    #   register: autotls_config
-
-    # - name: Configure Kerberos
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/cm/kerberosConfig"
-    #     method: PUT
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     body_format: json
-    #     body:
-    #       items:
-    #         - name: "KDC_ADMIN_USER"
-    #           value: "{{ kerberos_principal }}"
-    #         - name: "KDC_ADMIN_PASSWORD"
-    #           value: "{{ kerberos_password }}"
-    #     status_code: 200
-    #   register: kerberos_config
-
-    # - name: Create Cluster
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/clusters/{{ cluster_name }}"
+    #     url: "{{ cm_api_url }}/cm/license"
     #     method: POST
     #     user: "{{ cm_admin_user }}"
     #     password: "{{ cm_admin_pass }}"
     #     force_basic_auth: yes
+    #     #     body_format: form-multipart
     #     body_format: json
+    #     headers:
+    #       Content-Type: "application/json"
     #     body:
-    #       items:
-    #         - name: "{{ cluster_name }}"
-    #           version: "CDH{{ cdh_version }}"
-    #     status_code: 201,409
-    #   register: cluster_create
-
-    # - name: Set Parcel Repository
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/cm/config"
-    #     method: PUT
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     body_format: json
-    #     body:
-    #       items:
-    #         - name: "REMOTE_PARCEL_REPO_URLS"
-    #           value: "{{ parcel_repo }}"
-    #     status_code: 200
-    #   register: parcel_repo_set
-
-    # - name: Download and Distribute Parcel
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/parcels/products/CDH/versions/{{ cdh_version }}/commands/startDistribution"
-    #     method: POST
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     status_code: 200
-    #   register: parcel_distribution
-
-    # - name: Activate Parcel
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/parcels/products/CDH/versions/{{ cdh_version }}/commands/activate"
-    #     method: POST
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     status_code: 200
-    #   register: parcel_activation
-
-    # - name: Install Base Cluster Services
-    #   ansible.builtin.uri:
-    #     url: "{{ cm_api_url }}/clusters/{{ cluster_name }}/services"
-    #     method: POST
-    #     user: "{{ cm_admin_user }}"
-    #     password: "{{ cm_admin_pass }}"
-    #     force_basic_auth: yes
-    #     body_format: json
-    #     body:
-    #       items:
-    #         - name: "HDFS"
-    #           type: "HDFS"
-    #         - name: "YARN"
-    #           type: "YARN"
-    #         - name: "Hive"
-    #           type: "HIVE"
-    #         - name: "Ranger"
-    #           type: "RANGER"
-    #         - name: "Atlas"
-    #           type: "ATLAS"
-    #         - name: "Zookeeper"
-    #           type: "ZOOKEEPER"
-    #         - name: "Kafka"
-    #           type: "KAFKA"
-    #         - name: "HBase"
-    #           type: "HBASE"
-    #         - name: "Phoenix"
-    #           type: "PHOENIX"
-    #         - name: "Impala"
-    #           type: "IMPALA"
-    #         - name: "Tez"
-    #           type: "TEZ"
-    #         - name: "Hive-on-Tez"
-    #           type: "HIVE_ON_TEZ"
-    #     status_code: 200
-    #   register: service_installation
+    #       license: "{{ lookup('file', license_file_name) | b64encode }}"
+    #   when: cm_license_status.status == 404 and license_status.stat.exists
+    #   register: license_upload_response

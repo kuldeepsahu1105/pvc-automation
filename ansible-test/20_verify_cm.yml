@@ -12,11 +12,22 @@
       ansible.builtin.debug:
         msg: "cm_host is set to {{ cm_host }}"
 
-    - name: Set Cloudera Manager API base URL
-      ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/v54"
+    - name: Get Cloudera Manager API version
+      uri:
+        url: http://{{ cm_host }}:{{ cm_port }}/api/version
+        method: GET
+        status_code: 200
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        return_content: yes
+      register: result
 
-    - name: Debug cm_api URL
+    # Set base CM API URL
+    - set_fact:
+        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/{{ result.content }}"
+
+    - name: Print cm_api_url
       ansible.builtin.debug:
         msg: "cm_api_url is set to {{ cm_api_url }}"
 
@@ -30,9 +41,9 @@
         status_code: 200
       register: cm_version
 
-    - name: Print Cloudera Manager API Version Response
-      ansible.builtin.debug:
-        msg: "Cloudera Manager API Version: {{ cm_version.json }}"
+    # - name: Print Cloudera Manager API Version Response
+    #   ansible.builtin.debug:
+    #     msg: "Cloudera Manager API Version: {{ cm_version.json }}"
 
     - name: Print Cloudera Manager API Version and Build Timestamp
       ansible.builtin.debug:
@@ -105,3 +116,23 @@
       ansible.builtin.debug:
         msg: "Available Clusters: {{ cm_clusters.json['items'] }}"
         # msg: "Available Clusters: {{ cm_clusters.json.items | map(attribute='name') | list }}"
+
+    # - name: Get the host identifiers and names from Cloudera Manager
+    #   uri:
+    #     url: "{{ cm_api_url }}/hosts"
+    #     method: GET
+    #     status_code: 200
+    #     user: "{{ cm_admin_user }}"
+    #     password: "{{ cm_admin_pass }}"
+    #     force_basic_auth: yes
+    #     return_content: yes
+    #   register: scm_host_list
+
+    # - name: Extract the host identifiers and names into facts
+    #   set_fact:
+    #     scm_hosts: "{{ lookup('template', 'scm_host_list.j2') | from_yaml }}"
+
+    # - name: Print the extracted host identifiers and names
+    #   debug:
+    #     var: scm_hosts
+    #     # verbosity: 2
