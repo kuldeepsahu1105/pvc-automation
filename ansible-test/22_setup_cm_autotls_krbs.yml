@@ -1,0 +1,65 @@
+### ansible-playbook -i inventory.ini 20_verify_cm.yml
+
+---
+- name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
+  hosts: localhost
+  gather_facts: no
+  vars:
+    cm_admin_user: "admin"
+    cm_admin_pass: "admin"
+    cluster_name: "CDH-Cluster"
+    cdh_version: "7.1.9"
+    parcel_repo: "https://archive.cloudera.com/cdh7/7.1.9/parcels/"
+    kerberos_principal: "admin/admin@EXAMPLE.COM"
+    kerberos_password: "kerberos_password"
+    license_file_name: "license.txt"
+    scm_default_user: "admin"
+    scm_default_pass: "admin"
+  tasks:
+    - name: Set Cloudera Manager Host IP
+      ansible.builtin.set_fact:
+        cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
+
+    - name: Debug cm_host
+      ansible.builtin.debug:
+        msg: "cm_host is set to {{ cm_host }}"
+
+    - name: Set Cloudera Manager API base URL
+      ansible.builtin.set_fact:
+        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/v54"
+
+    - name: Debug cm_api URL
+      ansible.builtin.debug:
+        msg: "cm_api_url is set to {{ cm_api_url }}"
+
+    - name: Configure AutoTLS
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/config"
+        method: PUT
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          items:
+            - name: "SECURITY_AUTO_TLS"
+              value: "true"
+        status_code: 200
+      register: autotls_config
+
+    # - name: Configure Kerberos
+    #   ansible.builtin.uri:
+    #     url: "{{ cm_api_url }}/cm/kerberosConfig"
+    #     method: PUT
+    #     user: "{{ cm_admin_user }}"
+    #     password: "{{ cm_admin_pass }}"
+    #     force_basic_auth: yes
+    #     body_format: json
+    #     body:
+    #       items:
+    #         - name: "KDC_ADMIN_USER"
+    #           value: "{{ kerberos_principal }}"
+    #         - name: "KDC_ADMIN_PASSWORD"
+    #           value: "{{ kerberos_password }}"
+    #     status_code: 200
+    #   register: kerberos_config

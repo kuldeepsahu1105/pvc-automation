@@ -3,17 +3,6 @@
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
   hosts: localhost
   gather_facts: no
-  vars:
-    cm_user: "admin"
-    cm_password: "admin"
-    cluster_name: "CDH-Cluster"
-    cdh_version: "{{ cdh_version }}" # Fetch from group vars or defaults
-    parcel_repo: "https://archive.cloudera.com/cdh7/{{ cdh_version }}/parcels/"
-    license_file: "/path/to/license.txt"
-    kerberos_principal: "admin/admin@EXAMPLE.COM"
-    kerberos_password: "kerberos_password"
-    license_file_name: "license.json"
-
   tasks:
     - name: Set Cloudera Manager Host IP
       ansible.builtin.set_fact:
@@ -25,7 +14,7 @@
 
     - name: Set Cloudera Manager API base URL
       ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:7180/api/v54"
+        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/v54"
 
     - name: Debug cm_api URL
       ansible.builtin.debug:
@@ -35,8 +24,8 @@
       ansible.builtin.uri:
         url: "{{ cm_api_url }}/cm/version"
         method: GET
-        user: "{{ cm_user }}"
-        password: "{{ cm_password }}"
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
       register: cm_version
@@ -53,8 +42,8 @@
       ansible.builtin.uri:
         url: "{{ cm_api_url }}/cm/license"
         method: GET
-        user: "{{ cm_user }}"
-        password: "{{ cm_password }}"
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         return_content: yes
         status_code: [200, 404] # 404 if no license installed
@@ -91,8 +80,8 @@
       ansible.builtin.uri:
         url: "{{ cm_api_url }}/cm/service"
         method: GET
-        user: "{{ cm_user }}"
-        password: "{{ cm_password }}"
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
       register: cm_service_status
@@ -106,8 +95,8 @@
       ansible.builtin.uri:
         url: "{{ cm_api_url }}/clusters"
         method: GET
-        user: "{{ cm_user }}"
-        password: "{{ cm_password }}"
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
       register: cm_clusters

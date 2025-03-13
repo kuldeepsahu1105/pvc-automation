@@ -101,9 +101,13 @@ scm_db_password: "scm"
 cm_db_ssl_crt_dir: "/var/lib/cloudera-scm-server/.postgresql"
 cm_db_root_crt: "{{ cm_db_ssl_crt_dir }}/root.crt"
 cldr_mngr_packages:
-  - cloudera-manager-agent
-  - cloudera-manager-daemons
-  - cloudera-manager-server
+  server:
+    - cloudera-manager-agent
+    - cloudera-manager-daemons
+    - cloudera-manager-server
+  client:
+    - cloudera-manager-agent
+    - cloudera-manager-daemons
 
 # cldr-mngr databases to be created on postgres external database
 databases:
@@ -118,3 +122,13 @@ databases:
   - { name: "yqm", user: "yqm", password: "yqm" }
   - { name: "smm", user: "smm", password: "smm" }
   - { name: "das", user: "das", password: "das" }
+
+##### cm_server api configs
+cm_port: 7180
+cm_admin_user: "admin"
+cm_admin_pass: "admin"
+cdh_basecluster_name: "CDH-Cluster"
+parcel_repo: "https://archive.cloudera.com/cdh7/{{ cdh_version }}/parcels/"
+kerberos_principal: "{{ ipaadmin_principal }}/{{ ipaadmin_principal }}@{{ ipaserver_realm }}"
+kerberos_password: "{{ ipaadmin_password }}"
+license_file_name: "license.txt"

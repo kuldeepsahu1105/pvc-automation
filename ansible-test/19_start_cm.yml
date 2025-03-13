@@ -1,6 +1,6 @@
 ### ansible-playbook -i inventory.ini 19_start_cm.yml
 ---
-- name: Install and Configure Cloudera Manager
+- name: Install and Configure Cloudera Manager Server
   hosts: cldr-mngr
   become: yes
   tasks:
@@ -10,9 +10,9 @@
     #     state: present
 
     ##### Install the Cloudera Manager Server package
-    - name: Install Cloudera Manager packages
+    - name: Install Cloudera Manager Server packages
       ansible.builtin.dnf:
-        name: "{{ cldr_mngr_packages }}"
+        name: "{{ cldr_mngr_packages.server }}"
         state: present
 
     - name: Configure Cloudera Manager Agent
@@ -127,3 +127,61 @@
       ansible.builtin.debug:
         msg: "❌ Cloudera SCM Server failed to start within timeout!"
       when: cm_status.stdout != "active" and (cm_start_status is defined and cm_start_status.rc != 0)
+
+##### Setup agent config on rest of the hosts
+- name: Install and Configure Cloudera Manager Agents
+  hosts: all:!ipaserver:!cldr-mngr
+  become: yes
+  tasks:
+    ##### Install the Cloudera Manager Agent package
+    - name: Install Cloudera Manager Agent packages
+      ansible.builtin.dnf:
+        name: "{{ cldr_mngr_packages.client }}"
+        state: present
+
+    - name: Fetch config.ini from cldr-mngr
+      ansible.builtin.fetch:
+        src: /etc/cloudera-scm-agent/config.ini
+        dest: /tmp/config.ini
+        flat: yes
+      delegate_to: cldr-mngr
+
+    - name: Copy config.ini to all hosts
+      ansible.builtin.copy:
+        src: /tmp/config.ini
+        dest: /etc/cloudera-scm-agent/config.ini
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Print the updated config.ini file with updated server details
+      ansible.builtin.command:
+        cmd: grep server /etc/cloudera-scm-agent/config.ini
+      register: config_ini_output
+      changed_when: false
+
+    - name: Display config.ini content with updated server details
+      ansible.builtin.debug:
+        msg: "{{ config_ini_output.stdout_lines }}"
+
+    - name: Restart Cloudera Manager Agent
+      ansible.builtin.systemd:
+        name: cloudera-scm-agent
+        state: restarted
+        enabled: yes
+
+##### Print CM UI HTTP Public URL
+- name: Fetch and Print Cloudera Manager Public HTTP URL
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Get public IP of CM server from ipify
+      ansible.builtin.uri:
+        url: "https://api.ipify.org/"
+        return_content: yes
+      register: public_ip_result
+      delegate_to: cldr-mngr
+
+    - name: Print Cloudera Manager Public URL
+      ansible.builtin.debug:
+        msg: "Cloudera Manager Public HTTP URL: http://{{ public_ip_result.content }}:{{ cm_port }}/"
