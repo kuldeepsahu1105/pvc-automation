@@ -7,8 +7,8 @@
       ansible.builtin.selinux:
         policy: targeted
         state: disabled  # You can set to 'permissive' instead of 'disabled' if needed
-      notify:
-        - Reboot the machine
+      # notify:
+      #   - Reboot the machine
 
     - name: Reboot the machine to apply changes
       ansible.builtin.reboot:
