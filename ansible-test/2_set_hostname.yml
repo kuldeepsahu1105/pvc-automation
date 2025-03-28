@@ -1,4 +1,9 @@
 ### ansible-playbook -i inventory.ini 2_set_hostname.yml
+# vars:
+#   ansible_user: ec2-user
+#   cldr_hostname: ipaserver
+#   ipaserver_domain: cldrsetup.local
+
 ---
 - name: Set hostname to IP address
   hosts: all

@@ -1,4 +1,7 @@
 ### ansible-playbook -i inventory.ini 8_prereq_setup_003.yml
+# vars:
+#   postgresql_version: 14
+
 ---
 - name: Enable Repositories and Install Packages
   hosts: all

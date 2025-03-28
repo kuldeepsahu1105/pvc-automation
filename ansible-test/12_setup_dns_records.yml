@@ -1,4 +1,9 @@
 ### ansible-playbook -i inventory.ini 12_setup_dns_records.yml
+# vars:
+#   ipaadmin_password: "vmware123"
+#   ipaadmin_principal: "admin"
+#   ipaserver_domain: cldrsetup.local
+
 ---
 - name: Manage FreeIPA DNS Zones and Records
   hosts: ipaserver

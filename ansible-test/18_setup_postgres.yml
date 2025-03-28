@@ -1,4 +1,12 @@
 ### ansible-playbook -i inventory.ini 18_setup_postgres.yml
+# vars:
+#   postgresql_version: 15
+#   postgres_data_dir: "/var/lib/pgsql/{{ postgresql_version }}/data"
+#   pg_client_crt_dir: "/root/.postgresql"
+#   postgres_user: "postgres"
+#   postgres_password: "postgres"
+#   postgres_db: "postgres"
+
 ---
 - name: Install and Configure PostgreSQL
   hosts: cldr-mngr

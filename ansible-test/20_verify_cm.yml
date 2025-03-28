@@ -1,4 +1,9 @@
 ### ansible-playbook -i inventory.ini 20_setup_cm.yml
+# vars:
+#   cm_port: 7180
+#   cm_admin_user: "admin"
+#   cm_admin_pass: "admin"
+
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
   hosts: localhost

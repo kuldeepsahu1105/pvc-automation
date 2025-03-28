@@ -1,4 +1,11 @@
 ### ansible-playbook -i inventory.ini 4_setup_autossh.yml
+# vars:
+#   ssh_dir: "/root/.ssh"
+#   ssh_user: "root"
+#   private_key_path: "{{ ssh_dir }}/id_rsa"
+#   public_key_path: "{{ ssh_dir }}/id_rsa.pub"
+#   authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
+
 - name: Generate and Distribute SSH Key Pair
   hosts: ipaserver
   become: true

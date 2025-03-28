@@ -1,4 +1,16 @@
 ### ansible-playbook -i inventory.ini 16_setup_internal_repo.yml
+# vars:
+#   httpd_repo_dir: /var/www/https
+#   httpd_conf_file: /etc/httpd/conf/httpd.conf
+#   server_name: "{{ ansible_fqdn }}"
+#   cert_days_valid: 3650
+#   cert_subj: "/C={{ cert_country }}/ST={{ cert_state }}/L={{ cert_locality }}/O={{ cert_organization }}/OU={{ cert_organizational_unit }}/CN={{ ansible_fqdn }}"
+#   cert_country: "US"
+#   cert_state: "Santa Clara"
+#   cert_locality: "Raleigh"
+#   cert_organization: "Cloudera Inc"
+#   cert_organizational_unit: "CLDR"
+
 ---
 - name: Set up HTTPD to host Red Hat repository
   hosts: cldr-mngr

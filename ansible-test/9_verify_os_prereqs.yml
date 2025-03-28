@@ -1,4 +1,6 @@
 ### ansible-playbook -i inventory.ini 9_verify_os_prereqs.yml
+# vars:
+#    
 ---
 - name: Tasks for remaining prereq on all the hosts
   hosts: all

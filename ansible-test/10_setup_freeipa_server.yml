@@ -1,4 +1,14 @@
 ### ansible-playbook -i inventory.ini 10_setup_freeipa_server.yml
+# vars:
+#   ipaserver_domain: cldrsetup.local
+#   ipaserver_realm: "{{ ipaserver_domain | upper }}"
+#   ipaadmin_principal: "admin"
+#   ipaadmin_password: "vmware123"
+#   ipadm_password: "{{ ipaadmin_password }}"
+#   ipaserver_setup_dns: yes
+#   dns_forwarders: "no"
+#   reverse_zones: "no"
+#   chrony_enabled: "yes"
 ---
 - name: Install and Configure FreeIPA Server
   hosts: ipaserver

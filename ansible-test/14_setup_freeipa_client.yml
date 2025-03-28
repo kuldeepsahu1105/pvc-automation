@@ -1,4 +1,10 @@
 ### ansible-playbook -i inventory.ini 14_setup_freeipa_client.yml
+# vars:
+#   ipaserver_domain: cldrsetup.local
+#   ipaserver_realm: "{{ ipaserver_domain | upper }}"
+#   ipaadmin_principal: "admin"
+#   ipaadmin_password: "vmware123"
+
 ---
 - name: Install FreeIPA client packages
   hosts: all:!ipaserver

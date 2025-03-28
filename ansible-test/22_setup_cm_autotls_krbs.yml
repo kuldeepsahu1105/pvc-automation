@@ -1,4 +1,11 @@
 ### ansible-playbook -i inventory.ini 20_verify_cm.yml
+# vars:
+#   cm_port: 7180
+#   cm_admin_user: "admin"
+#   cm_admin_pass: "admin"
+#   kerberos_principal: "{{ ipaadmin_principal }}/{{ ipaadmin_principal }}@{{ ipaserver_realm }}"
+#   kerberos_password: "{{ ipaadmin_password }}"
+
 ---
 - name: Enable Auto-TLS in Cloudera Manager
   hosts: localhost

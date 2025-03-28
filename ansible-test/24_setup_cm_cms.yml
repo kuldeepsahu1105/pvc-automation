@@ -1,4 +1,6 @@
 ### ansible-playbook -i inventory.ini 20_verify_cm.yml
+# vars:
+  
 
 ---
 - name: Complete Cloudera Manager and CDH 7.1.9 Setup via API

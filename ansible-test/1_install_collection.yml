@@ -1,4 +1,7 @@
 ### ansible-playbook -i inventory.ini 1_install_collection.yml
+# vars:
+#   ansible_galaxy: "/root/.local/bin/ansible-galaxy"
+
 ---
 - name: Install Ansible Collections using ansible_galaxy
   hosts: ipaserver

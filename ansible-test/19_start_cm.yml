@@ -1,4 +1,19 @@
 ### ansible-playbook -i inventory.ini 19_start_cm.yml
+# vars:
+#   scm_db_name: "scm"
+#   scm_db_user: "scm"
+#   scm_db_password: "scm"
+#   cm_db_ssl_crt_dir: "/var/lib/cloudera-scm-server/.postgresql"
+#   cm_db_root_crt: "{{ cm_db_ssl_crt_dir }}/root.crt"
+#   cldr_mngr_packages:
+#     server:
+#       - cloudera-manager-agent
+#       - cloudera-manager-daemons
+#       - cloudera-manager-server
+#     client:
+#       - cloudera-manager-agent
+#       - cloudera-manager-daemons
+
 ---
 - name: Install and Configure Cloudera Manager Server
   hosts: cldr-mngr

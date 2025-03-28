@@ -1,4 +1,7 @@
 ### ansible-playbook -i inventory.ini 13_update_syscfg_network.yml
+# vars:
+#   ipaserver_domain: cldrsetup.local
+
 ---
 - name: Generate and configure /etc/sysconfig/network file based on existing values
   hosts: all
