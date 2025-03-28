@@ -161,7 +161,7 @@ print_message "Setting up internal repository..."
 run_playbook "16_setup_internal_repo.yml"
 
 print_message "Downloading CM, CDH and Spark repository files..."
-run_playbook "17_download_repos.yml"
+run_playbook "17_download_repos.yml -e cm_repo_username=$CM_REPO_USERID -e cm_repo_password=$CM_REPO_PASSWD"
 
 print_message "Setting up postgres db..."
 run_playbook "18_setup_postgres.yml"

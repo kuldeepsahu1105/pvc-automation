@@ -8,8 +8,8 @@
 #   spark_minor_version: "3.3.2.3.3.7191000.4"
 #   spark_numeric_version: "p0.60728639"
 #   public_ip: "{{ ansible_default_ipv4.address }}"
-#   username: "<username>"
-#   password: "<password>"
+#   cm_repo_username: "<username>"
+#   cm_repo_password: "<password>"
 #   webserver_path: "/var/www/html"
 #   cldr_repos_path: "{{ webserver_path }}/cloudera-repos" 
 
@@ -40,7 +40,7 @@
     - name: Download Cloudera Manager repo files
       get_url:
         url: >-
-          https://{{ username }}:{{ password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/
+          https://{{ cm_repo_username }}:{{ cm_repo_password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/
           {%- if item in ['allkeys.asc', 'allkeyssha256.asc'] -%}
           {{ item }}
           {%- else -%}
@@ -65,7 +65,7 @@
 
     - name: Download Cloudera Manager RPMs
       get_url:
-        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/{{ item }}"
+        url: "https://{{ cm_repo_username }}:{{ cm_repo_password }}@archive.cloudera.com/p/cm7/{{ cm_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/{{ item }}"
         dest: "{{ cldr_repos_path }}/cloudera-manager/cm{{ cm_major_version }}/{{ os_version }}/yum/RPMS/{{ ansible_architecture }}/"
       loop:
         - "cloudera-manager-agent-{{ cm_version }}-{{ cm_numeric_version }}.el{{ ansible_distribution_major_version }}.{{ ansible_architecture }}.rpm"
@@ -84,7 +84,7 @@
 
     - name: Download CDH Parcels
       get_url:
-        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/{{ cdh7 }}/{{ cdh_version }}/parcels/CDH-{{ cdh_major_version }}-1.cdh{{ cdh_major_version }}.p{{ cdh_build_number }}.{{ cdh_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
+        url: "https://{{ cm_repo_username }}:{{ cm_repo_password }}@archive.cloudera.com/p/{{ cdh7 }}/{{ cdh_version }}/parcels/CDH-{{ cdh_major_version }}-1.cdh{{ cdh_major_version }}.p{{ cdh_build_number }}.{{ cdh_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
         dest: "{{ cldr_repos_path }}/{{ cdh7 }}/{{ cdh_version }}/"
 
     - name: List downloaded CDH Parcels
@@ -98,7 +98,7 @@
 
     - name: Download Spark Parcels
       get_url:
-        url: "https://{{ username }}:{{ password }}@archive.cloudera.com/p/{{ spark3 }}/{{ spark_version }}/parcels/SPARK3-{{ spark_minor_version }}-1-1.{{ spark_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
+        url: "https://{{ cm_repo_username }}:{{ cm_repo_password }}@archive.cloudera.com/p/{{ spark3 }}/{{ spark_version }}/parcels/SPARK3-{{ spark_minor_version }}-1-1.{{ spark_numeric_version }}-el{{ ansible_distribution_major_version }}.parcel"
         dest: "{{ cldr_repos_path }}/{{ spark3 }}/{{ spark_version }}/"
 
     - name: List downloaded Spark Parcels
