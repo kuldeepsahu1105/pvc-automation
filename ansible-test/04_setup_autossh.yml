@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 4_setup_autossh.yml
+### ansible-playbook -i inventory.ini 04_setup_autossh.yml
 # vars:
 #   ssh_dir: "/root/.ssh"
 #   ssh_user: "root"

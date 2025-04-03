@@ -1,3 +1,7 @@
+### ansible-playbook -i inventory.ini copy_ranger_hive_ca.yml
+# vars:
+#
+
 ---
 - name: Ensure database server certificate file exists for Ranger and Hive
   hosts: pvcbase-master
@@ -7,7 +11,7 @@
       file:
         path: "{{ item.path }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
         owner: "{{ item.owner }}"
         group: "{{ item.group }}"
       loop:
@@ -18,7 +22,7 @@
       copy:
         src: /root/.postgresql/root.crt
         dest: "{{ item.path }}/root.crt"
-        mode: '0644'
+        mode: "0644"
         owner: "{{ item.owner }}"
         group: "{{ item.group }}"
       loop:

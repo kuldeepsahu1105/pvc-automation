@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -e  # Exit immediately if a command fails
-set -o pipefail  # Catch errors in pipes
+set -e          # Exit immediately if a command fails
+set -o pipefail # Catch errors in pipes
 
 # Function to print a fancy banner
 print_banner() {
@@ -101,7 +101,7 @@ echo "Updating SSH configuration prerequisites on all other hosts..."
 # ansible all -i inventory.ini -m lineinfile -a "path=/etc/ssh/sshd_config regexp='^#*PasswordAuthentication' line='PasswordAuthentication yes'" --become
 # ansible all -i inventory.ini -m lineinfile -a "path=/etc/ssh/sshd_config regexp='^#*PermitRootLogin' line='PermitRootLogin yes'" --become
 # ansible all -i inventory.ini -m service -a "name=sshd state=restarted" --become
-ansible-playbook -i inventory.ini 0_setup_ssh_preqs.yml --limit 'all:!ipaserver' --private-key="$PRIVATE_KEY"
+ansible-playbook -i inventory.ini 00_setup_ssh_preqs.yml --limit 'all:!ipaserver' --private-key="$PRIVATE_KEY"
 
 # Function to print playbook execution message
 run_playbook() {
@@ -124,32 +124,32 @@ run_playbook() {
 print_message "Running Ansible playbooks..."
 
 print_message "Installing collection dependencies..."
-run_playbook "1_install_collection.yml"
+run_playbook "01_install_collection.yml"
 
 print_message "Setting hostname..."
-run_playbook "2_set_hostname.yml"
+run_playbook "02_set_hostname.yml"
 
 print_message "Creating /etc/hosts entries..."
-run_playbook "3_create_etc_hosts.yml"
+run_playbook "03_create_etc_hosts.yml"
 cat /etc/hosts
 
 print_message "Setting up autossh..."
-run_playbook "4_setup_autossh.yml"
+run_playbook "04_setup_autossh.yml"
 
 print_message "Disabling SELinux..."
-run_playbook "5_disable_selinux.yml"
+run_playbook "05_disable_selinux.yml"
 
 print_message "Running prerequisite setup..."
-run_playbook "6_prereq_setup.yml"
+run_playbook "06_prereq_setup.yml"
 
 print_message "Running additional prerequisite setup..."
-run_playbook "7_prereq_setup_002.yml"
+run_playbook "07_prereq_setup_002.yml"
 
 print_message "Running more prerequisite setup..."
-run_playbook "8_prereq_setup_003.yml"
+run_playbook "08_prereq_setup_003.yml"
 
 print_message "Verifying OS Prereqs..."
-run_playbook "9_verify_os_prereqs.yml"
+run_playbook "09_verify_os_prereqs.yml"
 
 print_message "Setting up FreeIPA server..."
 run_playbook "10_setup_freeipa_server.yml"

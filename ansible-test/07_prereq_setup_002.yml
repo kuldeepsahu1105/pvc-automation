@@ -1,6 +1,6 @@
-### ansible-playbook -i inventory.ini 7_prereq_setup_002.yml
+### ansible-playbook -i inventory.ini 07_prereq_setup_002.yml
 # vars:
-#           
+#
 ---
 - name: Verify rsyslog service
   hosts: all

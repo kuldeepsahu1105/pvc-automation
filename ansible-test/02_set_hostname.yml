@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 2_set_hostname.yml
+### ansible-playbook -i inventory.ini 02_set_hostname.yml
 # vars:
 #   ansible_user: ec2-user
 #   cldr_hostname: ipaserver

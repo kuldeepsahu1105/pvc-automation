@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -e  # Exit immediately if a command fails
-set -o pipefail  # Catch errors in pipes
+set -e          # Exit immediately if a command fails
+set -o pipefail # Catch errors in pipes
 
 # Function to print a fancy banner
 print_message() {
@@ -16,14 +16,14 @@ print_message() {
 print_message "Checking and setting up repository..."
 if [ -d "pvc-automation" ]; then
     echo "Repository already exists. Pulling latest changes..."
-    cd pvc-automation
+    # cd pvc-automation
     # git reset --hard
     # git clean -fd
-    git pull origin main
+    # git pull origin main
 else
     echo "Cloning the repository..."
     git clone https://github.com/kuldeepsahu1105/pvc-automation.git
-    cd pvc-automation
+    # cd pvc-automation
 fi
 
 # Check for pem/idrsa file in the current path
@@ -48,13 +48,14 @@ else
 fi
 
 # Navigate to ansible-test directory if it exists
-if [ -d "ansible-test" ]; then
+if [ -d "pvc-automation/ansible-test" ]; then
     echo "ansible-test directory already exists..."
     echo "Moving sshkey.pem and license.txt to ansible-test directory..."
-    mv sshkey.pem license.txt ansible-test/
+    mv sshkey.pem license.txt pvc-automation/ansible-test/
 
     echo "Changing directory to ansible-test..."
-    cd ansible-test
+    cd pvc-automation/ansible-test
+    git pull origin main
 fi
 
 # Prompt for username
@@ -62,7 +63,7 @@ read -p "Enter Cloudera Manager Repo Username: " cm_repo_username
 
 # Prompt for password (input hidden)
 read -s -p "Enter Cloudera Manager Repo Password: " cm_repo_password
-echo ""  # Newline after password input
+echo "" # Newline after password input
 
 # Export variables
 export CM_REPO_USERID="$cm_repo_username"

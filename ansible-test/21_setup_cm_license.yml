@@ -85,7 +85,6 @@
       when:
         (cm_license_info is defined and cm_license_info.status is defined and cm_license_info.status == 404)
         and not license_file_status.stat.exists
-
       register: trial_license_response
 
     # Trigger handler

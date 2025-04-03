@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 6_prereq_setup.yml
+### ansible-playbook -i inventory.ini 06_prereq_setup.yml
 # vars:
 #    java_version: "17"
 

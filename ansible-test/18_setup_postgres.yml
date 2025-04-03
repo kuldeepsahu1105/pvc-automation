@@ -92,7 +92,6 @@
         - LANG
         - LC_CTYPE
 
-
 ##### TLS Setup for Postgres DB
 - name: Setup PostgreSQL with TLS/SSL for Cloudera Manager
   hosts: cldr-mngr

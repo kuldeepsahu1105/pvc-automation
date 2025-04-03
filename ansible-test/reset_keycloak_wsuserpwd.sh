@@ -50,7 +50,6 @@ echo "Admin token acquired."
 
 # echo "Password reset complete for all matching users."
 
-
 # Loop through usernames from partner001 to partner030
 for i in $(seq -w 99 100); do
     USERNAME="partner0$i"

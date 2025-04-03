@@ -114,8 +114,7 @@
       when: scm_csds is defined
       # delegate_to: cldr-mngr
 
-    ##### Start the Cloudera Manager Server and Verify
-    ##### Start and Enable Cloudera Manager Server
+    ##### Start and Enable the Cloudera Manager Server and Verify
     - name: Ensure Cloudera Manager services (Server and Agent) are enabled and started
       ansible.builtin.systemd:
         name: "{{ item }}"
@@ -124,9 +123,7 @@
       notify:
         - wait cloudera-scm-server
       # with_items:
-      loop:
-        - cloudera-scm-server
-        - cloudera-scm-agent
+      loop: "{{ cldr_mngr_packages.server }}"
       # delegate_to: cldr-mngr
       register: cm_services_status
 

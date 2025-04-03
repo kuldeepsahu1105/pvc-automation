@@ -1,6 +1,6 @@
-### ansible-playbook -i inventory.ini 9_verify_os_prereqs.yml
+### ansible-playbook -i inventory.ini 09_verify_os_prereqs.yml
 # vars:
-#    
+#
 ---
 - name: Tasks for remaining prereq on all the hosts
   hosts: all
@@ -56,8 +56,6 @@
       register: rc_local_status
       changed_when: false
     - debug: var=rc_local_status.stdout_lines
-
-
 # #####
 # - name: Tasks for remaining prereq on all the hosts
 #   hosts: all:ipaserver

@@ -1,4 +1,4 @@
-### ansible-playbook -i inventory.ini 0_install_collection.yml
+### ansible-playbook -i inventory.ini 00_install_collection.yml
 # for file in [0-9]*_*; do mv "$file" "$((10#${file%%_*} + 1))_${file#*_}"; done
 ---
 - name: Ensure SSH allows password authentication and root login

@@ -11,7 +11,7 @@
 #   cm_repo_username: "<username>"
 #   cm_repo_password: "<password>"
 #   webserver_path: "/var/www/html"
-#   cldr_repos_path: "{{ webserver_path }}/cloudera-repos" 
+#   cldr_repos_path: "{{ webserver_path }}/cloudera-repos"
 
 ---
 - name: Setup Cloudera Manager and Dependencies
