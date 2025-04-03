@@ -141,3 +141,6 @@ use_freeipa_for_crt_mgmt: false # Set to true if FreeIPA is used for certificate
 # OS User for Key-Based Authentication
 cm_srvr_sudo_user: "root" # Set the default SSH user for key-based authentication
 
+##### KDC integration for cldr-mngr:
+krb5_kdc_admin_user: "{{ ipaadmin_principal }}"
+krb5_kdc_admin_password: "{{ ipaadmin_password }}"

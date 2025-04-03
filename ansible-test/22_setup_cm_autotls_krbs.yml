@@ -151,3 +151,108 @@
     #     state: restarted
     #   delegate_to: "{{ item }}"
     #   loop: "{{ groups['all'] }}"
+
+
+
+##### KDC integration with Cloudera Manager
+---
+- name: Enable Kerberos (KDC) for Cloudera Manager
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Set Cloudera Manager Host IP
+      ansible.builtin.set_fact:
+        cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
+
+    - name: Debug cm_host
+      ansible.builtin.debug:
+        msg: "cm_host is set to {{ cm_host }}"
+
+    - name: Get Cloudera Manager API version
+      ansible.builtin.uri:
+        url: https://{{ cm_host }}:{{ cm_https_port }}/api/version
+        method: GET
+        status_code: 200
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+      register: result
+
+    - name: Set base Cloudera Manager API URL
+      ansible.builtin.set_fact:
+        cm_api_url: "https://{{ cm_host }}:{{ cm_https_port }}/api/{{ result.content }}"
+
+    - name: Print cm_api_url
+      ansible.builtin.debug:
+        msg: "cm_api_url is set to {{ cm_api_url }}"
+
+    - name: Import KDC admin credentials into Cloudera Manager
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/commands/importAdminCredentials"
+        method: POST
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+        body_format: json
+        validate_certs: no
+        body: >
+          {
+            "username": "{{ krb5_kdc_admin_user }}",
+            "password": "{{ krb5_kdc_admin_password }}"
+          }
+      register: kdc_response
+      changed_when: "'already exists' not in kdc_response.json"
+      failed_when:
+        - kdc_result is failed
+        - "'already exists' not in kdc_result.content"
+      ignore_errors: yes
+      notify: Restart Cloudera Manager
+
+  handlers:
+    - name: Restart Cloudera Manager
+      ansible.builtin.uri:
+        url: "{{ cm_api_url }}/cm/service/commands/restart"
+        method: POST
+        user: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        force_basic_auth: yes
+      changed_when: true
+
+
+
+
+
+
+    - name: Import KDC admin credentials into Cloudera Manager
+      cloudera.cluster.cm_api:
+        endpoint: "/cm/commands/importAdminCredentials?username={{ krb5_kdc_admin_user | urlencode }}&password={{ krb5_kdc_admin_password | urlencode }}"
+        method: POST
+        username: "{{ cloudera_manager_api_user }}"
+        password: "{{ cloudera_manager_api_password }}"
+      register: kdc_result
+      retries: 3
+      delay: 10
+      until: kdc_result is not failed
+  
+    - name: Restart Cloudera Management Services
+      cloudera.cluster.cm_api:
+        endpoint: "/cm/service/commands/restart"
+        method: POST
+        username: "{{ cloudera_manager_api_user }}"
+        password: "{{ cloudera_manager_api_password }}"
+      register: restart_result
+
+    - name: Wait for Cloudera Manager services to restart
+      pause:
+        minutes: 2
+
+  handlers:
+    - name: Restart Cloudera Manager
+      cloudera.cluster.cm_api:
+        endpoint: "/cm/service/commands/restart"
+        method: POST
+        username: "{{ cloudera_manager_api_user }}"
+        password: "{{ cloudera_manager_api_password }}"
+      register: restart_result
