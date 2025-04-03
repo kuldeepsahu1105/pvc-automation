@@ -1,52 +1,18 @@
-### ansible-playbook -i inventory.ini 20_verify_cm.yml
+### ansible-playbook -i inventory.ini 22_setup_cm_autotls_krbs.yml
 # vars:
-#   cm_port: 7180
-#   cm_admin_user: "admin"
-#   cm_admin_pass: "admin"
-#   kerberos_principal: "{{ ipaadmin_principal }}/{{ ipaadmin_principal }}@{{ ipaserver_realm }}"
-#   kerberos_password: "{{ ipaadmin_password }}"
-
+#   cm_private_key_path: "/root/.ssh/id_rsa" 
+#   cm_priv_key_passphrase: "" 
+#   use_freeipa_for_crt_mgmt: false 
+#   cm_srvr_sudo_user: "root" 
 ---
 - name: Enable Auto-TLS in Cloudera Manager
   hosts: localhost
   gather_facts: no
-  vars:
-    # SSH Authentication (Choose one)
-    # cm_node_password: "your-root-pass"  # Required for password-based authentication
-    cm_private_key_path: "/root/.ssh/id_rsa" # Required for key-based authentication
-    cm_priv_key_passphrase: "" # If private key is encrypted, provide cm_priv_key_passphrase
-
-    # Cloudera Manager Auto-TLS
-    use_freeipa_for_crt_mgmt: false # Set to true if FreeIPA is used for certificate management
-
-    # OS User for Key-Based Authentication
-    cm_srvr_sudo_user: "root" # Set the default SSH user for key-based authentication
-
   tasks:
-    - name: Set Cloudera Manager Host IP
-      ansible.builtin.set_fact:
-        cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
+    - name: Set up Cloudera Manager API URL
+      ansible.builtin.import_tasks: common_tasks/set_cm_api_url.yml
 
-    - name: Debug cm_host
-      ansible.builtin.debug:
-        msg: "cm_host is set to {{ cm_host }}"
-
-    - name: Get Cloudera Manager API version
-      ansible.builtin.uri:
-        url: http://{{ cm_host }}:{{ cm_port }}/api/version
-        method: GET
-        status_code: 200
-        user: "{{ cm_admin_user }}"
-        password: "{{ cm_admin_pass }}"
-        force_basic_auth: yes
-        return_content: yes
-      register: result
-
-    - name: Set base Cloudera Manager API URL
-      ansible.builtin.set_fact:
-        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/{{ result.content }}"
-
-    - name: Print cm_api_url
+    - name: Print cm_api_url (in playbook)
       ansible.builtin.debug:
         msg: "cm_api_url is set to {{ cm_api_url }}"
 
@@ -76,11 +42,16 @@
         body: "{{ lookup('file', '/tmp/auto-tls.json') }}"
         body_format: json
         timeout: 360
+        validate_certs: no
+        follow_redirects: all
       when: use_password
       register: auto_tls_response
       ignore_errors: yes
       notify:
         - Restart Cloudera Manager Services after Auto-TLS setup
+
+    # Trigger handler
+    - meta: flush_handlers
 
     - name: Set private key as a single line
       ansible.builtin.set_fact:
@@ -97,11 +68,16 @@
         body: "{{ lookup('file', '/tmp/auto-tls-key.json') }}"
         body_format: json
         timeout: 360
+        validate_certs: no
+        # follow_redirects: all
       when: not use_password
       register: auto_tls_response
       ignore_errors: yes
       notify:
         - Restart Cloudera Manager Services after Auto-TLS setup
+
+    # Trigger handler
+    - meta: flush_handlers
 
   handlers:
     - name: Restart Cloudera Manager Services after Auto-TLS setup
@@ -112,6 +88,7 @@
         - cloudera-scm-server
         - cloudera-scm-agent
       when: auto_tls_response is succeeded
+      delegate_to: cldr-mngr
 
     # - name: Configure Kerberos
     #   ansible.builtin.uri:
@@ -209,6 +186,9 @@
         - "'already exists' not in kdc_result.content"
       ignore_errors: yes
       notify: Restart Cloudera Manager
+
+    # Trigger handler
+    - meta: flush_handlers
 
   handlers:
     - name: Restart Cloudera Manager

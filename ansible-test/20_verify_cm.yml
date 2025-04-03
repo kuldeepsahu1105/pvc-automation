@@ -1,38 +1,18 @@
-### ansible-playbook -i inventory.ini 20_setup_cm.yml
+### ansible-playbook -i inventory.ini 20_verify_cm.yml
 # vars:
 #   cm_port: 7180
 #   cm_admin_user: "admin"
 #   cm_admin_pass: "admin"
 
 ---
-- name: Complete Cloudera Manager and CDH 7.1.9 Setup via API
+- name: Verify and perform sanity checks on cloudera-manager server
   hosts: localhost
   gather_facts: no
   tasks:
-    - name: Set Cloudera Manager Host IP
-      ansible.builtin.set_fact:
-        cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
+    - name: Set up Cloudera Manager API URL
+      ansible.builtin.import_tasks: common_tasks/set_cm_api_url.yml
 
-    - name: Debug cm_host
-      ansible.builtin.debug:
-        msg: "cm_host is set to {{ cm_host }}"
-
-    - name: Get Cloudera Manager API version
-      uri:
-        url: http://{{ cm_host }}:{{ cm_port }}/api/version
-        method: GET
-        status_code: 200
-        user: "{{ cm_admin_user }}"
-        password: "{{ cm_admin_pass }}"
-        force_basic_auth: yes
-        return_content: yes
-      register: result
-
-    # Set base CM API URL
-    - set_fact:
-        cm_api_url: "http://{{ cm_host }}:{{ cm_port }}/api/{{ result.content }}"
-
-    - name: Print cm_api_url
+    - name: Print cm_api_url (in playbook)
       ansible.builtin.debug:
         msg: "cm_api_url is set to {{ cm_api_url }}"
 
@@ -44,6 +24,7 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
+        validate_certs: no
       register: cm_version
 
     # - name: Print Cloudera Manager API Version Response
@@ -63,6 +44,7 @@
         force_basic_auth: yes
         return_content: yes
         status_code: [200, 404] # 404 if no license installed
+        validate_certs: no
       register: cm_license_status
       changed_when: false
 
@@ -100,6 +82,7 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
+        validate_certs: no
       register: cm_service_status
       failed_when: false
 
@@ -115,6 +98,7 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         status_code: 200
+        validate_certs: no
       register: cm_clusters
 
     - name: Print Available Clusters

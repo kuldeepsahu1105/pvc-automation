@@ -1,0 +1,39 @@
+# ---
+# - name: Wait for Cloudera Manager Server to Start and Active
+#   hosts: cldr-mngr
+#   tasks:
+- name: Check if Cloudera Manager Server is already running
+  ansible.builtin.shell: |
+    systemctl is-active cloudera-scm-server
+  register: cm_status
+  changed_when: false
+  failed_when: cm_status.rc > 1 # Fail only if the command itself fails
+
+- name: Print Cloudera SCM Server startup status - ALREADY RUNNING
+  ansible.builtin.debug:
+    msg: "✅ Cloudera SCM Server is already running!"
+  when: cm_status.stdout == "active"
+
+- name: Wait for Cloudera Manager Server to start or detect active status
+  ansible.builtin.shell: |
+    timeout 300 bash -c '
+      while true; do
+        systemctl is-active cloudera-scm-server | grep -q "active" && exit 0
+        tail -n 50 -f /var/log/cloudera-scm-server/cloudera-scm-server.log | grep -q "Started Jetty Server" && exit 0
+        sleep 5
+      done
+    '
+  register: cm_start_status
+  changed_when: false
+  failed_when: cm_start_status.rc != 0
+  when: cm_status.stdout != "active"
+
+- name: Print Cloudera SCM Server startup status - SUCCESS
+  ansible.builtin.debug:
+    msg: "✅ Cloudera SCM Server successfully started!"
+  when: cm_status.stdout == "active" or (cm_start_status is defined and cm_start_status.rc == 0)
+
+- name: Print Cloudera SCM Server startup status - FAILURE
+  ansible.builtin.debug:
+    msg: "❌ Cloudera SCM Server failed to start within timeout!"
+  when: cm_status.stdout != "active" and (cm_start_status is defined and cm_start_status.rc != 0)

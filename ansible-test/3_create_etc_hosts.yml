@@ -15,6 +15,9 @@
       notify:
         - Restart networking
 
+    # Trigger handler
+    - meta: flush_handlers
+
     - name: Ensure OS version is RHEL 9.x
       shell: cat /etc/*rel* | grep -E 'NAME|VERSION'
       register: os_version
