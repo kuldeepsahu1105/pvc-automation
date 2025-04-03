@@ -59,16 +59,17 @@ ansible --version
 PRIVATE_KEY=$(find . -maxdepth 1 -type f \( -name "*.pem" -o -name "id_rsa" \) | head -n 1)
 
 if [[ -z "$PRIVATE_KEY" ]]; then
-    echo "No private key found in the current directory. Checking ~/.ssh..."
-    if [[ -f "$HOME/.ssh/id_rsa" ]]; then
-        PRIVATE_KEY="$HOME/.ssh/id_rsa"
-        echo "Using existing key from ~/.ssh/id_rsa"
-    else
-        echo "No key found in ~/.ssh. Generating a new SSH key..."
-        ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N ""
-        PRIVATE_KEY="$HOME/.ssh/id_rsa"
-        echo "Generated new SSH key: $PRIVATE_KEY"
-    fi
+    echo "ERROR!! No private key file found in the current directory to ssh into VMs. Please put the id_rsa or private key file before trying again. Exiting ..."
+    exit 1
+    # if [[ -f "$HOME/.ssh/id_rsa" ]]; then
+    #     PRIVATE_KEY="$HOME/.ssh/id_rsa"
+    #     echo "Using existing key from ~/.ssh/id_rsa"
+    # else
+    #     echo "No key found in ~/.ssh. Generating a new SSH key..."
+    #     ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N ""
+    #     PRIVATE_KEY="$HOME/.ssh/id_rsa"
+    #     echo "Generated new SSH key: $PRIVATE_KEY"
+    # fi
 fi
 
 echo "Using private key: $PRIVATE_KEY"
@@ -78,6 +79,17 @@ ls -al "$PRIVATE_KEY"
 # Update ansible_ssh_private_key_file in group_vars/all.yml
 echo "Updating ansible_ssh_private_key_file in group_vars/all.yml..."
 sed -i "/^ansible_ssh_private_key_file:/c\ansible_ssh_private_key_file: $PRIVATE_KEY" group_vars/all.yml
+
+# Find license.txt file
+LICENSE_KEY=$(find . -maxdepth 1 -type f \( -name "*.txt" -o -name "license.txt" \) | head -n 1)
+
+if [[ -z "$LICENSE_KEY" ]]; then
+    echo "ERROR!! No license key file found in the current directory to upload into CM. Please put the txt file before trying again. Exiting ..."
+fi
+
+echo "Using license key: $LICENSE_KEY"
+exit 1
+ls -al "$LICENSE_KEY"
 
 # Ensure SSH allows password authentication and root login
 echo "Updating SSH configuration on IPAServer..."
