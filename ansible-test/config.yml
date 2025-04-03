@@ -1,0 +1,147 @@
+---
+# ansible_config_vars:
+ansible_user: ec2-user
+ansible_ssh_private_key_file: kuldeep-pvc-session.pem
+ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+ansible_galaxy: "/root/.local/bin/ansible-galaxy"
+
+# dependencies versions:
+java_version: "17"  # Change this if you need a different Java version
+
+# ipa_server_vars:
+ipaserver_domain: cldrsetup.local
+ipaserver_realm: "{{ ipaserver_domain | upper }}"
+ipaadmin_principal: "admin"
+ipaadmin_password: "vmware123"
+ipadm_password: "{{ ipaadmin_password }}"
+ipaserver_setup_dns: yes
+dns_forwarders: "no"
+reverse_zones: "no"
+chrony_enabled: "yes"
+
+# ssh_vars:
+ssh_user: "root"
+ssh_dir: "/root/.ssh"
+private_key_path: "{{ ssh_dir }}/id_rsa"
+public_key_path: "{{ ssh_dir }}/id_rsa.pub"
+authorized_keys_path: "{{ ssh_dir }}/authorized_keys"
+force_generate: "{{ hostvars[inventory_hostname].force_generate | default(false) }}"
+
+# Variables for setting internal repo:
+httpd_repo_dir: /var/www/https
+httpd_conf_file: /etc/httpd/conf/httpd.conf
+server_name: "{{ ansible_fqdn }}"
+cert_days_valid: 3650
+
+# Variables for customizable certificate subject fields:
+cert_country: "US"
+cert_state: "Santa Clara"
+cert_locality: "Raleigh"
+cert_organization: "Cloudera Inc"
+cert_organizational_unit: "CLDR"
+# cert_common_name: "cldr-mngr.cldrsetup.local"
+
+# The CN (Common Name) will be automatically set to the FQDN:
+cert_subj: "/C={{ cert_country }}/ST={{ cert_state }}/L={{ cert_locality }}/O={{ cert_organization }}/OU={{ cert_organizational_unit }}/CN={{ ansible_fqdn }}"
+
+# Variables for wildcard record and postgres jdbc driver setup:
+wildcard_dns_record: "*.apps"
+postgres_jdbc_version: "42.7.5"  # Configurable version
+jdbc_driver_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgres_jdbc_version }}.jar"
+jdbc_driver_dest: "/usr/share/java/postgresql-connector-java.jar"
+
+# PostgreSQL database variables:
+postgresql_version: 15
+postgres_data_dir: "/var/lib/pgsql/{{ postgresql_version }}/data"
+pg_client_crt_dir: "/root/.postgresql"
+postgres_user: "postgres"
+postgres_password: "postgres"
+postgres_db: "postgres"
+
+# PostgreSQL configuration template variables:
+postgres_port: 5432
+listen_addresses: "*"
+max_connections: 1000
+shared_buffers: "1024MB"
+wal_buffers: "16MB"
+max_wal_size: "6GB"
+min_wal_size: "512MB"
+checkpoint_completion_target: 0.9
+standard_conforming_strings: "off"
+jit: "off"
+
+# PostgreSQL database TLS/SSL variables:
+enable_ssl: true
+ssl_ca_file: "root.crt"
+ssl_cert_file: "server.crt"
+ssl_key_file: "server.key"
+
+# cldr-mngr repo setup variables:
+cm_version: "7.11.3.28"
+cm_numeric_version: "60766845"
+cdh_version: "7.1.9.1023"
+cdh_numeric_version: "60818430"
+spark_version: "3.3.7191000.4"
+spark_minor_version: "3.3.2.3.3.7191000.4"
+spark_numeric_version: "p0.60728639"
+public_ip: "{{ ansible_default_ipv4.address }}"
+cm_repo_username: "<username>"
+cm_repo_password: "<password>"
+webserver_path: "/var/www/html"
+cldr_repos_path: "{{ webserver_path }}/cloudera-repos"
+
+# cldr-mngr: scm config:
+scm_db_name: "scm"
+scm_db_user: "scm"
+scm_db_password: "scm"
+cm_db_ssl_crt_dir: "/var/lib/cloudera-scm-server/.postgresql"
+cm_db_root_crt: "{{ cm_db_ssl_crt_dir }}/root.crt"
+cldr_mngr_packages:
+  server:
+    - cloudera-manager-agent
+    - cloudera-manager-daemons
+    - cloudera-manager-server
+  client:
+    - cloudera-manager-agent
+    - cloudera-manager-daemons
+
+# cldr-mngr databases to be created on postgres external database:
+databases:
+  - { name: "{{ scm_db_name }}", user: "{{ scm_db_user }}", password: "{{ scm_db_password }}" }
+  - { name: "rman", user: "rman", password: "rman" }
+  - { name: "hue", user: "hue", password: "hue" }
+  - { name: "hive", user: "hive", password: "hive" }
+  - { name: "oozie", user: "oozie", password: "oozie" }
+  - { name: "ranger", user: "rangeradmin", password: "rangeradmin" }
+  - { name: "rangerkms", user: "rangerkms", password: "rangerkms" }
+  - { name: "schemaregistry", user: "schemaregistry", password: "schemaregistry" }
+  - { name: "yqm", user: "yqm", password: "yqm" }
+  - { name: "smm", user: "smm", password: "smm" }
+  - { name: "das", user: "das", password: "das" }
+
+##### cm_server api configs:
+cm_port: 7180
+cm_admin_user: "admin"
+cm_admin_pass: "admin"
+cdh_basecluster_name: "CDH-Cluster"
+parcel_repo: "https://archive.cloudera.com/cdh7/{{ cdh_version }}/parcels/"
+kerberos_principal: "{{ ipaadmin_principal }}/{{ ipaadmin_principal }}@{{ ipaserver_realm }}"
+kerberos_password: "{{ ipaadmin_password }}"
+license_file_name: "license.txt"
+
+##### cm_server autotls variables:
+# SSH Authentication (Choose one)
+# cm_node_password: "your-root-pass"  # Required for password-based authentication
+cm_private_key_path: "/root/.ssh/id_rsa" # Required for key-based authentication
+cm_priv_key_passphrase: "" # If private key is encrypted, provide cm_priv_key_passphrase
+
+# Cloudera Manager Auto-TLS
+use_freeipa_for_crt_mgmt: false # Set to true if FreeIPA is used for certificate management
+
+# OS User for Key-Based Authentication
+cm_srvr_sudo_user: "root" # Set the default SSH user for key-based authentication
+
+##### KDC integration for cldr-mngr:
+krb5_kdc_admin_user: "{{ ipaadmin_principal }}"
+krb5_kdc_admin_password: "{{ ipaadmin_password }}"
+krb5_kdc_admin_principal: "{{ krb5_kdc_admin_user }}@{{ ipaserver_realm }}"

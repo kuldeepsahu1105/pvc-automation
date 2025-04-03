@@ -26,10 +26,6 @@ else
     cd pvc-automation
 fi
 
-# Navigate to ansible-test directory if it exists
-if [ -d "ansible-test" ]; then
-    cd ansible-test
-    
 # Check for pem/idrsa file in the current path
 pem_file=$(find . -maxdepth 1 -type f \( -name "*.pem" -o -name "idrsa" \))
 if [ -z "$pem_file" ]; then
@@ -37,8 +33,8 @@ if [ -z "$pem_file" ]; then
     exit 1
 else
     echo "Found key file: $pem_file"
-    sed -i.bak "s|private_key_file:.*|private_key_file: $pem_file|" group_vars/all.yml
-    echo "Updated group_vars/all.yml with the key file name."
+    mv "$pem_file" "sshkey.pem"
+    echo "Renamed $pem_file to sshkey.pem"
 fi
 
 # Check for a txt file with "license" in its name and rename it to license.txt
@@ -50,9 +46,34 @@ else
     mv "$license_file" license.txt
     echo "Renamed $license_file to license.txt"
 fi
+
+# Navigate to ansible-test directory if it exists
+if [ -d "ansible-test" ]; then
+    echo "ansible-test directory already exists..."
+    echo "Moving sshkey.pem and license.txt to ansible-test directory..."
+    mv sshkey.pem license.txt ansible-test/
+
+    echo "Changing directory to ansible-test..."
+    cd ansible-test
 fi
+
+# Prompt for username
+read -p "Enter Cloudera Manager Repo Username: " cm_repo_username
+
+# Prompt for password (input hidden)
+read -s -p "Enter Cloudera Manager Repo Password: " cm_repo_password
+echo ""  # Newline after password input
+
+# Export variables
+export CM_REPO_USERID="$cm_repo_username"
+export CM_REPO_PASSWD="$cm_repo_password"
+
+# Confirm that variables are set
+echo "Environment variables for cm_repo credentials set successfully."
+echo "CM_REPO_USERID: $CM_REPO_USERID"
+echo "CM_REPO_PASSWD: $CM_REPO_PASSWD"
 
 # Execute pvc_setup.sh
 print_message "Executing pvc_setup.sh..."
 chmod +x pvc_setup.sh
-./pvc_setup.sh
+bash ./pvc_setup.sh

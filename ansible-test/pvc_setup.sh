@@ -85,10 +85,10 @@ LICENSE_KEY=$(find . -maxdepth 1 -type f \( -name "*.txt" -o -name "license.txt"
 
 if [[ -z "$LICENSE_KEY" ]]; then
     echo "ERROR!! No license key file found in the current directory to upload into CM. Please put the txt file before trying again. Exiting ..."
+    exit 1
 fi
 
 echo "Using license key: $LICENSE_KEY"
-exit 1
 ls -al "$LICENSE_KEY"
 
 # Ensure SSH allows password authentication and root login
