@@ -37,7 +37,7 @@
 
     - name: Print Auto-TLS status
       ansible.builtin.debug:
-        msg: "Auto-TLS is already enabled: {{ autotls_enabled }}"
+        msg: "✅ Auto-TLS is already enabled: {{ autotls_enabled }}"
 
     - name: Perform Auto-TLS setup only if not already enabled
       when: not autotls_enabled
