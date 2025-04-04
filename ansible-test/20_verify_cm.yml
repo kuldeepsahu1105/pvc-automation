@@ -23,7 +23,7 @@
         user: "{{ cm_admin_user }}"
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
-        status_code: 200
+        status_code: [200, 301, 303]
         validate_certs: no
       register: cm_version
 
@@ -43,7 +43,7 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         return_content: yes
-        status_code: [200, 404] # 404 if no license installed
+        status_code: [200, 301, 303, 404] # 404 if no license installed
         validate_certs: no
       register: cm_license_status
       changed_when: false
@@ -81,7 +81,7 @@
         user: "{{ cm_admin_user }}"
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
-        status_code: 200
+        status_code: [200, 301, 303]
         validate_certs: no
       register: cm_service_status
       failed_when: false
@@ -97,7 +97,7 @@
         user: "{{ cm_admin_user }}"
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
-        status_code: 200
+        status_code: [200, 301, 303]
         validate_certs: no
       register: cm_clusters
 
@@ -110,7 +110,7 @@
     #   uri:
     #     url: "{{ cm_api_url }}/hosts"
     #     method: GET
-    #     status_code: 200
+    #     status_code: [200, 301, 303]
     #     user: "{{ cm_admin_user }}"
     #     password: "{{ cm_admin_pass }}"
     #     force_basic_auth: yes

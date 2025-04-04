@@ -10,7 +10,7 @@
   ansible.builtin.uri:
     url: http://{{ cm_host }}:{{ cm_port }}/api/version
     method: GET
-    status_code: 200
+    status_code: [200, 301, 303]
     user: "{{ cm_admin_user }}"
     password: "{{ cm_admin_pass }}"
     force_basic_auth: yes

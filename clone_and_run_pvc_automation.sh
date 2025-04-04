@@ -46,16 +46,28 @@ else
     mv "$license_file" license.txt
     echo "Renamed $license_file to license.txt"
 fi
+#!/bin/bash
 
 # Navigate to ansible-test directory if it exists
 if [ -d "pvc-automation/ansible-test" ]; then
     echo "ansible-test directory already exists..."
-    echo "Moving sshkey.pem and license.txt to ansible-test directory..."
-    mv sshkey.pem license.txt pvc-automation/ansible-test/
+
+    # Ensure sshkey.pem and license.txt exist before moving
+    if [ -f "sshkey.pem" ] && [ -f "license.txt" ]; then
+        echo "Moving sshkey.pem and license.txt to ansible-test directory..."
+        mv sshkey.pem license.txt pvc-automation/ansible-test/
+    else
+        echo "Warning: sshkey.pem or license.txt not found!"
+        exit 1
+    fi
 
     echo "Changing directory to ansible-test..."
-    cd pvc-automation/ansible-test
+    cd pvc-automation/ansible-test || exit 1 # Exit if cd fails
+
+    echo "Pulling latest changes from Git..."
     git pull origin main
+else
+    echo "ansible-test directory does not exist!"
 fi
 
 # Prompt for username

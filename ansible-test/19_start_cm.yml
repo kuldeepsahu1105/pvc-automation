@@ -123,7 +123,9 @@
       notify:
         - wait cloudera-scm-server
       # with_items:
-      loop: "{{ cldr_mngr_packages.server }}"
+      loop:
+        - cloudera-scm-server
+        - cloudera-scm-agent
       # delegate_to: cldr-mngr
       register: cm_services_status
 

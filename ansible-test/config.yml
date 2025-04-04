@@ -6,7 +6,7 @@ ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 ansible_galaxy: "/root/.local/bin/ansible-galaxy"
 
 # dependencies versions:
-java_version: "17"  # Change this if you need a different Java version
+java_version: "17" # Change this if you need a different Java version
 
 # ipa_server_vars:
 ipaserver_domain: cldrsetup.local
@@ -46,7 +46,7 @@ cert_subj: "/C={{ cert_country }}/ST={{ cert_state }}/L={{ cert_locality }}/O={{
 
 # Variables for wildcard record and postgres jdbc driver setup:
 wildcard_dns_record: "*.apps"
-postgres_jdbc_version: "42.7.5"  # Configurable version
+postgres_jdbc_version: "42.7.5" # Configurable version
 jdbc_driver_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgres_jdbc_version }}.jar"
 jdbc_driver_dest: "/usr/share/java/postgresql-connector-java.jar"
 
@@ -107,14 +107,22 @@ cldr_mngr_packages:
 
 # cldr-mngr databases to be created on postgres external database:
 databases:
-  - { name: "{{ scm_db_name }}", user: "{{ scm_db_user }}", password: "{{ scm_db_password }}" }
+  - {
+      name: "{{ scm_db_name }}",
+      user: "{{ scm_db_user }}",
+      password: "{{ scm_db_password }}",
+    }
   - { name: "rman", user: "rman", password: "rman" }
   - { name: "hue", user: "hue", password: "hue" }
   - { name: "hive", user: "hive", password: "hive" }
   - { name: "oozie", user: "oozie", password: "oozie" }
   - { name: "ranger", user: "rangeradmin", password: "rangeradmin" }
   - { name: "rangerkms", user: "rangerkms", password: "rangerkms" }
-  - { name: "schemaregistry", user: "schemaregistry", password: "schemaregistry" }
+  - {
+      name: "schemaregistry",
+      user: "schemaregistry",
+      password: "schemaregistry",
+    }
   - { name: "yqm", user: "yqm", password: "yqm" }
   - { name: "smm", user: "smm", password: "smm" }
   - { name: "das", user: "das", password: "das" }
@@ -131,17 +139,16 @@ license_file_name: "license.txt"
 
 ##### cm_server autotls variables:
 # SSH Authentication (Choose one)
-# cm_node_password: "your-root-pass"  # Required for password-based authentication
+# cm_node_sudo_password: "your-root-pass"  # Required for password-based authentication # Either commented out or defined but not set to empty string
 cm_private_key_path: "/root/.ssh/id_rsa" # Required for key-based authentication
 cm_priv_key_passphrase: "" # If private key is encrypted, provide cm_priv_key_passphrase
+
+# OS User for Key-Based/Password based Authentication for AutoTLS
+cm_srvr_sudo_user: "root" # Set the default SSH user for key-based/password-based authentication
 
 # Cloudera Manager Auto-TLS
 use_freeipa_for_crt_mgmt: false # Set to true if FreeIPA is used for certificate management
 
-# OS User for Key-Based Authentication
-cm_srvr_sudo_user: "root" # Set the default SSH user for key-based authentication
-
 ##### KDC integration for cldr-mngr:
 krb5_kdc_admin_user: "{{ ipaadmin_principal }}"
 krb5_kdc_admin_password: "{{ ipaadmin_password }}"
-krb5_kdc_admin_principal: "{{ krb5_kdc_admin_user }}@{{ ipaserver_realm }}"

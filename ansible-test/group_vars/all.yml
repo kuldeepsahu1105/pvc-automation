@@ -131,15 +131,15 @@ license_file_name: "license.txt"
 
 ##### cm_server autotls variables:
 # SSH Authentication (Choose one)
-# cm_node_password: "your-root-pass"  # Required for password-based authentication
+# cm_node_sudo_password: "your-root-pass"  # Required for password-based authentication # Either commented out or defined but not set to empty string
 cm_private_key_path: "/root/.ssh/id_rsa" # Required for key-based authentication
 cm_priv_key_passphrase: "" # If private key is encrypted, provide cm_priv_key_passphrase
 
+# OS User for Key-Based/Password based Authentication for AutoTLS
+cm_srvr_sudo_user: "root" # Set the default SSH user for key-based/password-based authentication
+
 # Cloudera Manager Auto-TLS
 use_freeipa_for_crt_mgmt: false # Set to true if FreeIPA is used for certificate management
-
-# OS User for Key-Based Authentication
-cm_srvr_sudo_user: "root" # Set the default SSH user for key-based authentication
 
 ##### KDC integration for cldr-mngr:
 krb5_kdc_admin_user: "{{ ipaadmin_principal }}"

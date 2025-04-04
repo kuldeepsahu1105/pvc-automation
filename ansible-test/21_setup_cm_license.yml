@@ -25,7 +25,7 @@
         password: "{{ cm_admin_pass }}"
         force_basic_auth: yes
         return_content: yes
-        status_code: [200, 404] # 404 if no license installed
+        status_code: [200, 301, 303, 404] # 404 if no license installed
         validate_certs: no
       register: cm_license_info
       changed_when: false
@@ -75,7 +75,7 @@
       uri:
         url: "{{ cm_api_url }}/cm/trial/begin"
         method: POST
-        status_code: [200, 204, 400]
+        status_code: [200, 204, 301, 303, 400]
         force_basic_auth: yes
         user: "{{ cm_admin_user }}"
         password: "{{ cm_admin_pass }}"
@@ -126,6 +126,8 @@
     #     method: POST
     #     user: "{{ cm_admin_user }}"
     #     password: "{{ cm_admin_pass }}"
+    #     status_code: [200, 204, 301, 303]
+    #     validate_certs: no
     #     force_basic_auth: yes
     #     #     body_format: form-multipart
     #     body_format: json
