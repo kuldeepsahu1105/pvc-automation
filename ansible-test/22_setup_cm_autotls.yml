@@ -27,7 +27,7 @@
         follow_redirects: none
         return_content: no
         validate_certs: no
-        status_code: [200, 303]
+        status_code: [200, 303, 404]
       register: cm_http_response
       ignore_errors: yes
 
@@ -96,12 +96,23 @@
           when: not use_password
           register: auto_tls_response
           ignore_errors: yes
-          notify:
-            - Restart Cloudera Manager Services after Auto-TLS setup
 
-    # Trigger handler immediately after Auto-TLS setup
-    - name: Flush handlers to restart Cloudera Manager immediately
-      ansible.builtin.meta: flush_handlers
+        - name: Restart Cloudera Manager Services if Auto-TLS was triggered
+          ansible.builtin.systemd:
+            name: "{{ item }}"
+            state: restarted
+          loop:
+            - cloudera-scm-server
+            - cloudera-scm-agent
+          when: (auto_tls_response.json is defined) and (auto_tls_response.json.success | default(false))
+          delegate_to: cldr-mngr
+
+    #       notify:
+    #         - Restart Cloudera Manager Services after Auto-TLS setup
+
+    # # Trigger handler immediately after Auto-TLS setup
+    # - name: Flush handlers to restart Cloudera Manager immediately
+    #   ansible.builtin.meta: flush_handlers
 
     # Validate that Cloudera Manager is running after restart
     - name: Wait for Cloudera Manager Server to Start
@@ -111,13 +122,13 @@
     - name: Print Cloudera Manager Access URLs
       ansible.builtin.import_tasks: common_tasks/print_cm_urls.yml
 
-  handlers:
-    - name: Restart Cloudera Manager Services after Auto-TLS setup
-      systemd:
-        name: "{{ item }}"
-        state: restarted
-      with_items:
-        - cloudera-scm-server
-        - cloudera-scm-agent
-      when: auto_tls_response is succeeded
-      delegate_to: cldr-mngr
+  # handlers:
+  #   - name: Restart Cloudera Manager Services after Auto-TLS setup
+  #     systemd:
+  #       name: "{{ item }}"
+  #       state: restarted
+  #     with_items:
+  #       - cloudera-scm-server
+  #       - cloudera-scm-agent
+  #     when: auto_tls_response is succeeded
+  #     delegate_to: cldr-mngr

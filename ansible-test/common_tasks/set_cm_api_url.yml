@@ -2,9 +2,9 @@
   ansible.builtin.set_fact:
     cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}" # Fetch IP of the first host in cldr-mngr group
 
-- name: Debug cm_host
-  ansible.builtin.debug:
-    msg: "cm_host is set to {{ cm_host }}"
+# - name: Debug cm_host
+#   ansible.builtin.debug:
+#     msg: "cm_host is set to {{ cm_host }}"
 
 - name: Get Cloudera Manager API version
   ansible.builtin.uri:
@@ -25,3 +25,7 @@
 - name: Print cm_api_url
   ansible.builtin.debug:
     msg: "cm_api_url is set to {{ cm_api_url }}"
+
+- name: Print Cloudera Manager Web UI Private URL
+  ansible.builtin.debug:
+    msg: "Cloudera Manager Private HTTP URL: http://{{ cm_host }}:{{ cm_port }}/"

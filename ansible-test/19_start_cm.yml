@@ -199,3 +199,6 @@
     - name: Print Cloudera Manager Public URL
       ansible.builtin.debug:
         msg: "Cloudera Manager Public HTTP URL: http://{{ public_ip_result.content }}:{{ cm_port }}/"
+
+    - name: Print Cloudera Manager Private URL
+      ansible.builtin.import_tasks: common_tasks/set_cm_api_url.yml

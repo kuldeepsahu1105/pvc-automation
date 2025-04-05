@@ -59,16 +59,18 @@
   ansible.builtin.debug:
     msg: "❓ Auto-TLS is enabled: {{ autotls_enabled }}"
 
-- name: Set Cloudera Manager protocol
+- name: Set Cloudera Manager protocol and port
   ansible.builtin.set_fact:
     cm_protocol: "{{ 'https' if autotls_enabled else 'http' }}"
+    cm_port_ui: "{{ '7183' if autotls_enabled else '7180' }}"
+    cm_port_api: "{{ '7183' if autotls_enabled else '7180' }}" # same port for both in CM
 
 - name: Set Cloudera Manager URLs
   ansible.builtin.set_fact:
-    cm_private_ui_url: "{{ cm_protocol }}://{{ cm_private_ip }}:7183"
-    cm_private_api_url: "{{ cm_protocol }}://{{ cm_private_ip }}:7183/api/{{ cm_api_version }}"
-    cm_public_ui_url: "{{ cm_protocol }}://{{ cm_public_ip }}:7183"
-    cm_public_api_url: "{{ cm_protocol }}://{{ cm_public_ip }}:7183/api/{{ cm_api_version }}"
+    cm_private_ui_url: "{{ cm_protocol }}://{{ cm_private_ip }}:{{ cm_port_ui }}"
+    cm_private_api_url: "{{ cm_protocol }}://{{ cm_private_ip }}:{{ cm_port_api }}/api/{{ cm_api_version }}"
+    cm_public_ui_url: "{{ cm_protocol }}://{{ cm_public_ip }}:{{ cm_port_ui }}"
+    cm_public_api_url: "{{ cm_protocol }}://{{ cm_public_ip }}:{{ cm_port_api }}/api/{{ cm_api_version }}"
 
 - name: Set Cloudera Manager Access Message (YAML formatted output)
   ansible.builtin.debug:
