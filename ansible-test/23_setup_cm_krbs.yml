@@ -5,6 +5,29 @@
 #   use_freeipa_for_crt_mgmt: false 
 #   cm_srvr_sudo_user: "root"
 #   cm_node_sudo_password: ""  # Alternate Option for Priv Key based AutoTLS setup
+
+### ansible-playbook -i inventory.ini 21_enable_cm_kerberos.yml
+# vars:
+#   ansible_galaxy: "/root/.local/bin/ansible-galaxy"
+
+---
+
+- name: Install Ansible Collections using ansible_galaxy
+  hosts: ipaserver
+  become: yes
+  tasks:
+
+    - name: Install cloudera.cluster collection from Git (main branch)
+      ansible.builtin.shell:
+        cmd: >
+          {{ ansible_galaxy }} collection install
+          git+https://github.com/cloudera-labs/cloudera.cluster.git,devel
+      register: cloudera_result
+      retries: 3
+      delay: 5
+      until: cloudera_result.rc == 0
+
+
 ---
 - name: Enable Auto-TLS in Cloudera Manager
   hosts: localhost
@@ -165,3 +188,86 @@
         username: "{{ cloudera_manager_api_user }}"
         password: "{{ cloudera_manager_api_password }}"
       register: restart_result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### ansible-playbook -i inventory.ini 21_enable_cm_kerberos.yml
+# vars:
+#   ansible_galaxy: "/root/.local/bin/ansible-galaxy"
+
+- name: Enable Cloudera Manager Kerberos
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    cm_host: "{{ hostvars[groups['cldr-mngr'][0]].ansible_host }}"
+    cm_port: 7180
+    cm_admin_user: "admin"
+    cm_admin_pass: "admin"
+    kerberos_realm: "{{ ipaserver_realm }}"
+    krb5_kdc_admin_user: "{{ ipaadmin_principal }}"
+    krb5_kdc_admin_password: "{{ ipaadmin_password }}"
+    ipa_kdc_host: "ipaserver.{{ ipaserver_domain }}"
+    ansible_galaxy: "/root/.local/bin/ansible-galaxy"
+  tasks:
+    - name: Print Cloudera Manager Host and IPA Server
+      ansible.builtin.debug:
+        msg:
+          - "✅ Using cm_host: {{ cm_host }}"
+          - "✅ Using IPA (KDC) host: {{ ipa_kdc_host }}"
+
+    # - name: Print message if Kerberos already configured
+    #   ansible.builtin.debug:
+    #     msg: "✅ Kerberos is already configured in Cloudera Manager. Skipping setup."
+    #   when: __kerberos_status.status == 200
+
+    - name: Setup Kerberos via Cloudera Manager API
+      cloudera.cluster.cm_kerberos:
+        host: "{{ cm_host }}"
+        port: "7183"
+        username: "{{ cm_admin_user }}"
+        password: "{{ cm_admin_pass }}"
+        security_realm: "{{ kerberos_realm }}"
+        kdc_type: "Red Hat IPA"
+        krb_enc_types: "aes256-cts aes128-cts rc4-hmac"
+        kdc_admin_host: "{{ ipa_kdc_host }}"
+        kdc_host: "{{ ipa_kdc_host }}"
+        kdc_admin_user: "{{ krb5_kdc_admin_user }}@{{ kerberos_realm }}"
+        kdc_admin_password: "{{ krb5_kdc_admin_password }}"
+        verify_tls: false  # 🔥 disables certificate check
+        force_tls: true
+      register: __cm_kerberos
+
+    - name: Print all cm_config name-value pairs in a single message
+      ansible.builtin.debug:
+        msg: |
+          {% for item in __cm_kerberos.cm_config %}
+          {{ item.name }}: {{ item.value }}
+          {% endfor %}
+
+    - name: Restart Cloudera Manager Services if KDC integration has made enabled
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - cloudera-scm-server
+        - cloudera-scm-agent
+      when: (__cm_kerberos.json is defined) and (__cm_kerberos.json.success | default(false))
+      delegate_to: cldr-mngr
+
+    # Validate that Cloudera Manager is running after restart
+    - name: Wait for Cloudera Manager Server to Start
+      ansible.builtin.import_tasks: common_tasks/wait_for_cm_server_active.yml
+      delegate_to: cldr-mngr

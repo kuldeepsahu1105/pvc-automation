@@ -97,7 +97,7 @@
           register: auto_tls_response
           ignore_errors: yes
 
-        - name: Restart Cloudera Manager Services if Auto-TLS was triggered
+        - name: Restart Cloudera Manager Services if Auto-TLS has made enabled
           ansible.builtin.systemd:
             name: "{{ item }}"
             state: restarted
