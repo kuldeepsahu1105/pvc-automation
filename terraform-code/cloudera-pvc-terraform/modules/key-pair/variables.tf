@@ -4,17 +4,6 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
-# variable "ami_id" {
-#   description = "AMI ID to use for the EC2 instance"
-#   type        = string
-# }
-
-# variable "instance_type" {
-#   description = "EC2 Instance type"
-#   type        = string
-#   default     = "t2.micro"
-# }
-
 variable "create_keypair" {
   description = "Flag to decide whether to create a new key pair or use an existing one"
   type        = string

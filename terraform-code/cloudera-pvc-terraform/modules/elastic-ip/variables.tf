@@ -1,6 +1,3 @@
-# variable "enable_elastic_ip" {
-#   type = bool
-# }
 
 variable "create_eip" {
   description = "True or false to create Elastic IP"

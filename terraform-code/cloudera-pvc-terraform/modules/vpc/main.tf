@@ -26,7 +26,7 @@ module "vpc" {
 
   count = var.create_vpc ? 1 : 0
 
-  name = "my-vpc"
+  name = var.vpc_name
   cidr = var.vpc_cidr_block
 
   azs             = var.azs
@@ -36,7 +36,12 @@ module "vpc" {
   enable_nat_gateway = var.enable_nat_gateway
   enable_vpn_gateway = var.enable_vpn_gateway
 
-  tags = var.tags
+  tags = merge(
+    var.vpc_tags,
+    {
+      "created_by" = "Terraform"
+    }
+  )
 }
 
 # If create_vpc = false → fetch the default VPC

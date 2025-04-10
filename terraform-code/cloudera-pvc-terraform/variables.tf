@@ -121,3 +121,50 @@ variable "existing_sg" {
   type        = string
   default     = ""
 }
+
+variable "vpc_name" {
+  description = "Name of new VPC or use the default one"
+  type        = string
+  default     = "my-vpc"
+}
+
+variable "vpc_tags" {
+  description = "Map of tags to apply to the key pair (owner and environment)"
+  type        = map(string)
+  default = {
+    "owner"       = "your-owner"
+    "environment" = "your-environment"
+  }
+}
+
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID"
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "Subnet ID"
+}
+
+variable "security_group_id" {
+  type        = string
+  description = "Security Group ID"
+}
+
+variable "key_name" {
+  type        = string
+  description = "Name of the SSH key pair"
+}
+
+variable "instance_groups" {
+  description = "Map of instance group configs"
+  type = map(object({
+    count         = number
+    ami           = string
+    instance_type = string
+    volume_size   = number
+    tags          = map(string)
+    user_data     = optional(string)
+  }))
+}

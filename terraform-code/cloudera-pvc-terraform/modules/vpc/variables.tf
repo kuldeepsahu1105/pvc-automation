@@ -20,6 +20,21 @@ variable "create_vpc" {
   default     = false
 }
 
+variable "vpc_name" {
+  description = "Name of new VPC or use the default one"
+  type        = string
+  default     = "my-vpc"
+}
+
+variable "vpc_tags" {
+  description = "Map of tags to apply to the key pair (owner and environment)"
+  type        = map(string)
+  default = {
+    "owner"       = "your-owner"
+    "environment" = "your-environment"
+  }
+}
+
 variable "vpc_cidr_block" {
   type        = string
   default     = "10.0.0.0/16"

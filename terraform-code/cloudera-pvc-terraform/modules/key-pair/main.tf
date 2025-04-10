@@ -17,7 +17,6 @@
 #   region = var.aws_region
 # }
 
-# locals {
 # If using an existing keypair, don't create any resources
 data "aws_key_pair" "existing_keypair" {
   count    = var.create_keypair == false ? 1 : 0
@@ -55,13 +54,3 @@ resource "aws_key_pair" "pvc_cluster_keypair" {
   )
 }
 
-# Example EC2 instance with the created or existing key pair
-# resource "aws_instance" "example" {
-#   ami           = var.ami_id
-#   instance_type = var.instance_type
-#   key_name      = local.pvc_cluster_keypair
-
-#   tags = {
-#     Name = "ExampleEC2Instance"
-#   }
-# }
