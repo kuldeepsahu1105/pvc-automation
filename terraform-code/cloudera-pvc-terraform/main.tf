@@ -47,28 +47,30 @@
 
 
 module "key-pair" {
-  source         = "./modules/key-pair"
-  create_keypair = var.create_keypair
-  keypair_name   = var.keypair_name
+  source                = "./modules/key-pair"
+  create_keypair        = var.create_keypair
+  keypair_name          = var.keypair_name
   existing_keypair_name = var.existing_keypair_name # The name of the existing key pair
   keypair_tags          = var.pvc_cluster_tags
 }
 
 module "elastic-ip" {
-  source = "./modules/elastic-ip"  # path to your module folder
+  source     = "./modules/elastic-ip" # path to your module folder
   create_eip = var.create_eip
-  eip_name     = var.cldr_eip_name
-  eip_tags = var.pvc_cluster_tags
+  eip_name   = var.cldr_eip_name
+  eip_tags   = var.pvc_cluster_tags
 }
 
 module "security_group" {
-  source            = "./modules/security-group"  # Adjust the path based on where your module is located
-  sg_name           = "pvc_cluster_sg"          # Security group name
-  sg_description    = "Allow traffic for the VPC"  # Security group description
-  vpc_id            = var.vpc_id                  # VPC ID to attach the security group to
-  allowed_ports     = var.allowed_ports        # List of allowed ports (change based on your use case)
-  allowed_cidrs     = var.allowed_cidrs               # List of allowed CIDR blocks for ingress
-  sg_tags           = var.pvc_cluster_tags
+  source         = "./modules/security-group"  # Adjust the path based on where your module is located
+  sg_name        = "pvc_cluster_sg"            # Security group name
+  sg_description = "Allow traffic for the VPC" # Security group description
+  vpc_id         = var.vpc_id                  # VPC ID to attach the security group to
+  allowed_ports  = var.allowed_ports           # List of allowed ports (change based on your use case)
+  allowed_cidrs  = var.allowed_cidrs           # List of allowed CIDR blocks for ingress
+  sg_tags        = var.pvc_cluster_tags
+  create_new_sg = var.create_new_sg
+  existing_sg   = var.existing_sg
 }
 
 

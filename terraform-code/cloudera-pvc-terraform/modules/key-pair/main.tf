@@ -17,19 +17,7 @@
 #   region = var.aws_region
 # }
 
-# ------- Determine if Keypair should be created or used
-locals {
-  # Flag to determine if keypair should be created
-  create_keypair = var.create_keypair == "true" ? true : false
-
-  # Key pair value
-  pvc_cluster_keypair = (
-    local.create_keypair == false ?
-    var.existing_keypair_name :                  # Use existing key pair name provided by user
-    aws_key_pair.pvc_cluster_keypair[0].key_name # Otherwise, create a new key pair
-  )
-}
-
+# locals {
 # If using an existing keypair, don't create any resources
 data "aws_key_pair" "existing_keypair" {
   count    = var.create_keypair == false ? 1 : 0
@@ -38,14 +26,14 @@ data "aws_key_pair" "existing_keypair" {
 
 # If creating a new keypair, generate an RSA private key
 resource "tls_private_key" "pvc_private_key" {
-  count     = local.create_keypair ? 1 : 0
+  count     = var.create_keypair == true ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 # If creating a new keypair, save the private key to a file
 resource "local_sensitive_file" "pem_file" {
-  count                = local.create_keypair ? 1 : 0
+  count                = var.create_keypair == true ? 1 : 0
   filename             = "${var.keypair_name}-keypair.pem"
   file_permission      = "600"
   directory_permission = "700"
@@ -54,8 +42,8 @@ resource "local_sensitive_file" "pem_file" {
 
 # If creating a new keypair, create the key pair in AWS
 resource "aws_key_pair" "pvc_cluster_keypair" {
-  count      = local.create_keypair ? 1 : 0
-  key_name   = "${var.keypair_name}"
+  count      = var.create_keypair == true ? 1 : 0
+  key_name   = var.keypair_name
   public_key = tls_private_key.pvc_private_key[0].public_key_openssh
 
   # Adding tags to the key pair

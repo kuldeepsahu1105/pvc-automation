@@ -30,25 +30,13 @@
 #   }
 # }
 
-locals {
-  # Flag to determine if keypair should be created
-  create_new_sg = var.create_new_sg == "true" ? true : false
-
-  # Key pair value
-  pvc_cluster_sg = (
-    local.create_new_sg == false ?
-    var.existing_sg :                  # Use existing key pair name provided by user
-    aws_security_group.vpc_sg[0].name # Otherwise, create a new key pair
-  )
-}
-
 data "aws_security_group" "existing_sg" {
-  count    = local.create_new_sg == false ? 1 : 0
-  id = var.existing_sg
+  count = var.create_new_sg == false ? 1 : 0
+  id    = var.existing_sg
 }
 
 resource "aws_security_group" "vpc_sg" {
-  count       = local.create_new_sg ? 1 : 0  # Only create a new security group if the flag is true
+  count       = var.create_new_sg == true ? 1 : 0 # Only create a new security group if the flag is true
   name        = var.sg_name
   description = var.sg_description
   vpc_id      = var.vpc_id
@@ -75,7 +63,7 @@ resource "aws_security_group" "vpc_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    self = true
+    self        = true
   }
 
   egress {
@@ -86,6 +74,11 @@ resource "aws_security_group" "vpc_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.sg_tags
+  tags = merge(
+    var.sg_tags,
+    {
+      "created_by" = "Terraform"
+    }
+  )
 }
 

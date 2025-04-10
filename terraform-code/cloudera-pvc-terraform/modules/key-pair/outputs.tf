@@ -5,10 +5,10 @@
 
 output "keypair_name" {
   description = "The key pair name used for the EC2 instance"
-  value       = local.pvc_cluster_keypair
+  value       = var.create_keypair == true ? aws_key_pair.pvc_cluster_keypair[*].key_name : null
 }
 
 output "existing_keypair_name" {
-  value = var.create_keypair ? "false" : data.aws_key_pair.existing_keypair[*].name
+  value       = var.create_keypair == false ? data.aws_key_pair.existing_keypair[*].name : null
   description = "Key pair name used when create_keypair is false"
 }

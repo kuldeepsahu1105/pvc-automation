@@ -75,15 +75,15 @@ variable "pvc_cluster_tags" {
   }
 }
 
-variable "cldr_eip_name"{
+variable "cldr_eip_name" {
   description = "Name of the elastic ip"
-  type        = string 
+  type        = string
 }
 
 variable "create_eip" {
   description = "Flag to decide whether to create an eip for cloudera manager"
   type        = bool
-  default     = true 
+  default     = true
 }
 
 variable "sg_name" {

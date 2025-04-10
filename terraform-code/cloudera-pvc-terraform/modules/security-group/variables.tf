@@ -53,5 +53,5 @@ variable "sg_tags" {
   default = {
     "owner"       = "kashu-ygulati"
     "environment" = "your-environment"
-}
+  }
 }

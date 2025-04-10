@@ -2,7 +2,7 @@
 #   type = bool
 # }
 
-variable "create_eip"{
+variable "create_eip" {
   description = "True or false to create Elastic IP"
   type        = bool
 }
