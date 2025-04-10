@@ -2,4 +2,5 @@
 .idea/
 logs/*
 !logs/.gitkeep
+.terraform/
 
