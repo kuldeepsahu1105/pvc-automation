@@ -1,20 +1,55 @@
+# module "vpc" {
+#   source = "terraform-aws-modules/vpc/aws"
+#   version = "4.0.2"
+
+#   create_vpc           = var.create_vpc
+#   name                 = var.vpc_name
+#   cidr                 = var.vpc_cidr
+#   azs                  = var.availability_zones
+#   public_subnets       = var.public_subnets
+#   private_subnets      = var.private_subnets
+#   enable_nat_gateway   = var.enable_nat_gateway
+#   single_nat_gateway   = true
+#   enable_dns_support   = true
+#   enable_dns_hostnames = true
+
+#   tags = {
+#     Environment = var.env_name
+#     Owner       = var.owner
+#   }
+# }
+
+# If create_vpc = true → use the public module
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
-  version = "4.0.2"
+  version = "~> 5.0"
 
-  create_vpc           = var.create_vpc
-  name                 = var.vpc_name
-  cidr                 = var.vpc_cidr
-  azs                  = var.availability_zones
-  public_subnets       = var.public_subnets
-  private_subnets      = var.private_subnets
-  enable_nat_gateway   = var.enable_nat_gateway
-  single_nat_gateway   = true
-  enable_dns_support   = true
-  enable_dns_hostnames = true
+  count = var.create_vpc ? 1 : 0
 
-  tags = {
-    Environment = var.env_name
-    Owner       = var.owner
+  name = "my-vpc"
+  cidr = var.vpc_cidr_block
+
+  azs             = var.azs
+  private_subnets = var.private_subnets
+  public_subnets  = var.public_subnets
+
+  enable_nat_gateway = var.enable_nat_gateway
+  enable_vpn_gateway = var.enable_vpn_gateway
+
+  tags = var.tags
+}
+
+# If create_vpc = false → fetch the default VPC
+data "aws_vpc" "default" {
+  count   = var.create_vpc ? 0 : 1
+  default = true
+}
+
+data "aws_subnets" "default" {
+  count = var.create_vpc ? 0 : 1
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default[0].id]
   }
 }
+

@@ -9,6 +9,6 @@ output "keypair_name" {
 }
 
 output "existing_keypair_name" {
-  value       = var.create_keypair == false ? data.aws_key_pair.existing_keypair[*].name : null
   description = "Key pair name used when create_keypair is false"
+  value       = var.create_keypair == false ? data.aws_key_pair.existing_keypair[*].name : null
 }
