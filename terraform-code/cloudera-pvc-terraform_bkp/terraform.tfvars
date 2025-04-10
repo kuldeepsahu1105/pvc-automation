@@ -1,0 +1,10 @@
+env_name              = "dev"
+owner                 = "your-name"
+pvcbase_master_count  = 2
+pvcbase_worker_count  = 6
+pvcecs_master_count   = 1
+pvcecs_worker_count   = 10
+create_elastic_ip     = true
+create_custom_vpc     = false
+custom_vpc_subnets    = 2
+allowed_cidr          = "0.0.0.0/0"
