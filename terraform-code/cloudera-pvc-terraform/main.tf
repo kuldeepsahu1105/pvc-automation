@@ -1,57 +1,50 @@
-# This is the main Terraform configuration file for deploying a Cloudera PVC cluster on AWS.
-
 module "key-pair" {
   source                = "./modules/key-pair"
   create_keypair        = var.create_keypair
   keypair_name          = var.keypair_name
-  existing_keypair_name = var.existing_keypair_name # The name of the existing key pair
+  existing_keypair_name = var.existing_keypair_name
   keypair_tags          = var.pvc_cluster_tags
 }
 
 module "elastic-ip" {
-  source     = "./modules/elastic-ip" # path to your module folder
+  source     = "./modules/elastic-ip"
   create_eip = var.create_eip
   eip_name   = var.cldr_eip_name
   eip_tags   = var.pvc_cluster_tags
 }
 
+module "vpc" {
+  source               = "./modules/vpc"
+  create_vpc           = var.create_vpc
+  vpc_cidr_block       = var.vpc_cidr_block
+  azs                  = var.azs
+  private_subnets_cidr = var.private_subnets_cidr
+  public_subnets_cidr  = var.public_subnets_cidr
+  enable_nat_gateway   = var.enable_nat_gateway
+  enable_vpn_gateway   = var.enable_vpn_gateway
+  vpc_name             = var.vpc_name
+  vpc_tags             = var.pvc_cluster_tags
+}
+
 module "security_group" {
-  source         = "./modules/security-group"  # Adjust the path based on where your module is located
-  sg_name        = "pvc_cluster_sg"            # Security group name
-  sg_description = "Allow traffic for the VPC" # Security group description
-  vpc_id         = var.vpc_id                  # VPC ID to attach the security group to
-  allowed_ports  = var.allowed_ports           # List of allowed ports (change based on your use case)
-  allowed_cidrs  = var.allowed_cidrs           # List of allowed CIDR blocks for ingress
+  source         = "./modules/security-group"
+  sg_name        = var.sg_name
+  sg_description = "Allow traffic for the VPC"
+  vpc_id         = module.vpc.vpc_id
+  allowed_ports  = var.allowed_ports
+  allowed_cidrs  = var.allowed_cidrs
   sg_tags        = var.pvc_cluster_tags
   create_new_sg  = var.create_new_sg
   existing_sg    = var.existing_sg
 }
 
-module "vpc" {
-  source = "./modules/vpc"
-
-  create_vpc         = true
-  vpc_cidr_block     = "10.0.0.0/16"
-  azs                = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-  private_subnets_cidr    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets_cidr     = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  enable_nat_gateway = true
-  enable_vpn_gateway = false
-  vpc_name           = "pvc-vpc"
-  vpc_tags           = var.pvc_cluster_tags
-  # tags = {  
-  #   Terraform   = "true"
-  #   Environment = "dev"
-  # }
-}
-
 module "ec2_instances" {
   source = "./modules/ec2-instance"
 
-  vpc_id            = var.vpc_id
-  subnet_id         = var.subnet_id
-  security_group_id = var.security_group_id
-  key_name          = var.key_name
+  vpc_id            = module.vpc.vpc_id
+  subnet_id         = module.vpc.subnet_ids[0] # or loop if needed
+  security_group_id = module.security_group.security_group_id
+  key_name          = module.key-pair.keypair_name
   pvc_cluster_tags  = var.pvc_cluster_tags
   instance_groups   = var.instance_groups
 }
