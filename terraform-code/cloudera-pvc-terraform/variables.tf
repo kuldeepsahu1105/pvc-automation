@@ -66,15 +66,6 @@ variable "existing_keypair_name" {
   default     = ""
 }
 
-variable "pvc_cluster_tags" {
-  description = "Map of tags to apply to the key pair (owner and environment)"
-  type        = map(string)
-  default = {
-    "owner"       = "your-owner"
-    "environment" = "your-environment"
-  }
-}
-
 variable "cldr_eip_name" {
   description = "Name of the elastic ip"
   type        = string

@@ -1,77 +1,54 @@
-# output "vpc_id" {
-#   value = module.vpc.vpc_id
-# }
-
-# output "public_subnets_cidr" {
-#   value = module.vpc.subnet_ids
-# }
-
-# output "elastic_ip" {
-#   value = module.elastic_ip.eip
-# }
-
-
 output "keypair_name" {
-  value = module.key-pair.keypair_name
+  value       = module.key-pair.keypair_name
+  description = "The name of the SSH key pair used to access the EC2 instances"
 }
 
 output "cldr_mngr_public_ip" {
   value       = module.elastic-ip.eip_public_ip
-  description = "The public IP of the Elastic IP created for the cloudera manager"
-}
-
-output "instance_ids" {
-  description = "Map of instance group to list of instance IDs"
-  value = {
-    for group, group_values in var.instance_groups :
-    group => [
-      for i in range(group_values.count) :
-      module.ec2-instance.instance_ids["${group}-${i + 1}"]
-    ]
-  }
-}
-
-output "private_ips" {
-  description = "Map of instance group to list of private IPs"
-  value = {
-    for group, group_values in var.instance_groups :
-    group => [
-      for i in range(group_values.count) :
-      module.ec2-instance.private_ips["${group}-${i + 1}"]
-    ]
-  }
-}
-
-output "public_ips" {
-  description = "Map of instance group to list of public IPs"
-  value = {
-    for group, group_values in var.instance_groups :
-    group => [
-      for i in range(group_values.count) :
-      module.ec2-instance.public_ips["${group}-${i + 1}"]
-    ]
-  }
+  description = "The public IP address assigned to the Cloudera Manager instance via an Elastic IP"
 }
 
 output "instance_groups" {
-  description = "Map of instance group to instance group values"
   value       = var.instance_groups
+  description = "A map of EC2 instance group names to their respective configuration values (count, instance type, etc.)"
 }
 
-# output "vpc_id" {
-#   value = var.create_vpc ? module.vpc[0].vpc_id : module.vpc.default[*].id
-# }
+output "instance_ids" {
+  value       = module.ec2_instances.instance_ids
+  description = "A map of instance group names to the list of EC2 instance IDs created in each group"
+}
 
-# output "subnet_ids" {
-#   value = var.create_vpc ? concat(module.vpc[0].public_subnets_cidr, module.vpc[0].private_subnets_cidr) : module.vpc.subnet_ids
-# }
+output "private_ips" {
+  value       = module.ec2_instances.private_ips
+  description = "A map of instance group names to the list of private IP addresses assigned to EC2 instances"
+}
 
-# output "vpc_name" {
-#   description = "The vpc name used for the EC2 instance"
-#   value       = var.create_vpc == true ? module.vpc.vpc_name : null
-# }
+output "public_ips" {
+  value       = module.ec2_instances.public_ips
+  description = "A map of instance group names to the list of public IP addresses assigned to EC2 instances"
+}
 
-# output "default_vpc_name" {
-#   description = "Default vpc name used when create_vpc is false"
-#   value       = var.create_vpc == false ? module.vpc.default_vpc_name : null
-# }
+output "sec_group_details" {
+  value       = var.create_new_sg == true ? module.security_group.security_group_id : module.security_group.existing_sg_name
+  description = "The security group ID created by the module or the name of the existing security group used"
+}
+
+output "vpc_id" {
+  value       = module.vpc.vpc_id
+  description = "The ID of the VPC being used, either newly created or existing"
+}
+
+output "subnet_ids" {
+  value       = module.vpc.subnet_ids
+  description = "A list of subnet IDs within the selected or created VPC"
+}
+
+output "vpc_name" {
+  value       = module.vpc.vpc_name
+  description = "The name tag associated with the VPC when a new one is created"
+}
+
+output "default_vpc_name" {
+  value       = module.vpc.default_vpc_name
+  description = "The name tag of the default VPC, used when create_vpc is set to false"
+}

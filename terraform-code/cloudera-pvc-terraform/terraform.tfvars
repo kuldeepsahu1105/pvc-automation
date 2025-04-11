@@ -40,7 +40,6 @@ enable_nat_gateway = false
 enable_vpn_gateway = false
 
 # EC2 Groups Definition: vars
-vpc_id        = "vpc-9d9385fa"
 subnet_id         = "subnet-6346ad2b"
 security_group_id = "sg-0dbb6f79cba5ef701"
 key_name          = "kuldeep-pvc-session"
