@@ -15,8 +15,8 @@ variable "pvc_cluster_tags" {
 
 variable "create_keypair" {
   description = "Flag to decide whether to create a new key pair or use an existing one"
-  type        = string
-  default     = "true"
+  type        = bool
+  default     = true
 }
 
 variable "existing_keypair_name" {

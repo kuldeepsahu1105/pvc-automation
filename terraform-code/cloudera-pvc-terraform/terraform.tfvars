@@ -1,4 +1,4 @@
-aws_region   = "ap-southeast-1"
+aws_region = "ap-southeast-1"
 
 pvc_cluster_tags = {
   owner       = "ksahu-ygulati"
@@ -31,7 +31,14 @@ private_subnets_cidr = []
 enable_nat_gateway   = false
 enable_vpn_gateway   = false
 
-# Instance Groups
+# EC2 vars
+
+# EC2 Groups Definition: vars
+vpc_id            = "vpc-9d9385fa"
+subnet_id         = "subnet-6346ad2b"
+security_group_id = "sg-0dbb6f79cba5ef701"
+key_name          = "kuldeep-pvc-session"
+
 instance_groups = {
   cldr_mngr = {
     count         = 1

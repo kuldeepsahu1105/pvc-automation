@@ -40,7 +40,10 @@ module "security_group" {
 
 module "ec2_instances" {
   source = "./modules/ec2-instance"
-
+  depends_on = [
+    module.key-pair,
+    module.security_group
+  ]
   vpc_id            = module.vpc.vpc_id
   subnet_id         = module.vpc.subnet_ids[0] # or loop if needed
   security_group_id = module.security_group.security_group_id

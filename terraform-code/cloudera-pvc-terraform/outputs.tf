@@ -29,7 +29,7 @@ output "public_ips" {
 }
 
 output "sec_group_details" {
-  value       = var.create_new_sg == true ? module.security_group.security_group_id : module.security_group.existing_sg_name
+  value       = module.security_group.security_group_id
   description = "The security group ID created by the module or the name of the existing security group used"
 }
 
