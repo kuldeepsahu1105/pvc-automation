@@ -45,18 +45,13 @@ module "vpc" {
   # }
 }
 
-module "ec2-instance" {
+module "ec2_instances" {
   source = "./modules/ec2-instance"
 
-  common_config = {
-    vpc_id            = var.vpc_id
-    subnet_id         = var.subnet_id
-    security_group_id = var.security_group_id
-    key_name          = var.key_name
-    #   elastic_ip           = module.elastic_ip.eip
-    #   env_name             = var.env_name
-    #   owner                = var.owner
-  }
-
-  instance_groups = var.instance_groups
+  vpc_id            = var.vpc_id
+  subnet_id         = var.subnet_id
+  security_group_id = var.security_group_id
+  key_name          = var.key_name
+  pvc_cluster_tags  = var.pvc_cluster_tags
+  instance_groups   = var.instance_groups
 }
