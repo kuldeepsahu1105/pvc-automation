@@ -1,5 +1,5 @@
 # Common: vars
-aws_region   = "ap-southeast-1"
+aws_region = "ap-southeast-1"
 
 # Tags to apply to the key pair (e.g., owner and environment)
 pvc_cluster_tags = {

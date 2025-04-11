@@ -1,11 +1,4 @@
-# variable "vpc_id" {}
-# variable "allowed_ports" {
-#   type = list(number)
-# }
-# variable "allowed_cidr" {}
-# variable "env_name" {}
-# variable "owner" {}
-
+# Variables for the security group module
 variable "aws_region" {
   description = "AWS Region"
   type        = string

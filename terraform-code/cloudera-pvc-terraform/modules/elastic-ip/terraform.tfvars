@@ -1,5 +1,5 @@
 # Common: vars
-aws_region   = "ap-southeast-1"
+aws_region = "ap-southeast-1"
 
 # Tags to apply to the key pair (e.g., owner and environment)
 eip_tags = {
@@ -8,5 +8,5 @@ eip_tags = {
 }
 
 # EIP creation: vars
-create_eip    = true
-eip_name = "cldr-mngr-eip"
+create_eip = true
+eip_name   = "cldr-mngr-eip"

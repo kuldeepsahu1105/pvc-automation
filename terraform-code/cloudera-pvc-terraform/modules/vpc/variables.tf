@@ -1,19 +1,4 @@
-# variable "create_vpc" {}
-# variable "vpc_name" {}
-# variable "vpc_cidr" {}
-# variable "availability_zones" {
-#   type = list(string)
-# }
-# variable "public_subnets_cidr" {
-#   type = list(string)
-# }
-# variable "private_subnets_cidr" {
-#   type = list(string)
-# }
-# variable "enable_nat_gateway" {}
-# variable "env_name" {}
-# variable "owner" {}
-
+# Variables for VPC module
 variable "aws_region" {
   description = "AWS Region"
   type        = string
@@ -36,28 +21,28 @@ variable "vpc_tags" {
   description = "Map of tags to apply to the key pair (owner and environment)"
   type        = map(string)
   default = {
-    owner       = "ksahu-ygulati" 
-    environment = "development"   
+    owner       = "ksahu-ygulati"
+    environment = "development"
   }
 }
 
 variable "vpc_cidr_block" {
-  type        = string
-  default     = "10.0.0.0/16"
+  type    = string
+  default = "10.0.0.0/16"
 }
 
 variable "azs" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
 variable "private_subnets_cidr" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
 variable "public_subnets_cidr" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 

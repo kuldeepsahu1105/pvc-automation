@@ -1,21 +1,4 @@
-# terraform {
-#   required_version = ">= 1.4.6"
-
-#   required_providers {
-#     aws = {
-#       source  = "hashicorp/aws"
-#       version = ">= 4.65.0"
-#     }
-#     tls = {
-#       source  = "hashicorp/tls"
-#       version = ">= 3.1.0"
-#     }
-#   }
-# }
-
-# provider "aws" {
-#   region = var.aws_region
-# }
+# This module manages the creation of an SSH key pair for accessing the Cloudera PVC cluster.
 
 # If using an existing keypair, don't create any resources
 data "aws_key_pair" "existing_keypair" {
@@ -53,4 +36,3 @@ resource "aws_key_pair" "pvc_cluster_keypair" {
     }
   )
 }
-

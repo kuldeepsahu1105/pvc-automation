@@ -13,6 +13,7 @@ resource "aws_s3_bucket" "tf_state" {
     }
   )
 }
+
 resource "aws_dynamodb_table" "tf_lock" {
   name         = var.dynamodb_table_name
   billing_mode = "PAY_PER_REQUEST"

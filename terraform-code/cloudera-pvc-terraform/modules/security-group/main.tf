@@ -1,35 +1,4 @@
-# resource "aws_security_group" "default" {
-#   name        = "cloudera-sg"
-#   description = "Security group for Cloudera PVC instances"
-#   vpc_id      = var.vpc_id
-
-#   dynamic "ingress" {
-#     for_each = var.allowed_ports
-#     content {
-#       from_port   = ingress.value
-#       to_port     = ingress.value
-#       protocol    = "tcp"
-#       cidr_blocks = [var.allowed_cidr]
-#     }
-#   }
-
-#   dynamic "egress" {
-#     for_each = var.allowed_ports
-#     content {
-#       from_port   = egress.value
-#       to_port     = egress.value
-#       protocol    = "tcp"
-#       cidr_blocks = ["0.0.0.0/0"]
-#     }
-#   }
-
-#   tags = {
-#     Name        = "cloudera-sg"
-#     Environment = var.env_name
-#     Owner       = var.owner
-#   }
-# }
-
+# This module creates a security group in AWS with the ability to either create a new one or use an existing one.
 data "aws_security_group" "existing_sg" {
   count = var.create_new_sg == false ? 1 : 0
   id    = var.existing_sg
@@ -81,4 +50,3 @@ resource "aws_security_group" "vpc_sg" {
     }
   )
 }
-
