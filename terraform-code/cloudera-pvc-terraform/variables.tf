@@ -16,8 +16,8 @@
 #   default     = ["us-east-1a", "us-east-1b"]
 #   description = "List of availability zones to use for the VPC"
 # }
-# variable "public_subnets" { type = list(string) }
-# variable "private_subnets" { type = list(string) }
+# variable "public_subnets_cidr" { type = list(string) }
+# variable "private_subnets_cidr" { type = list(string) }
 # variable "enable_nat_gateway" { default = false }
 
 # # SG
@@ -43,7 +43,7 @@
 # }
 
 
-variable "region" {
+variable "aws_region" {
   description = "AWS region to deploy pvc cluster infra"
   type        = string
   default     = "ap-southeast-1"
@@ -122,43 +122,36 @@ variable "existing_sg" {
   default     = ""
 }
 
-variable "vpc_name" {
-  description = "Name of new VPC or use the default one"
-  type        = string
-  default     = "my-vpc"
-}
-
-variable "vpc_tags" {
-  description = "Map of tags to apply to the key pair (owner and environment)"
-  type        = map(string)
-  default = {
-    "owner"       = "your-owner"
-    "environment" = "your-environment"
-  }
-}
-
-variable "vpc_id" {
-  type        = string
-  description = "VPC ID"
-}
-
 variable "subnet_id" {
-  type        = string
-  description = "Subnet ID"
+    description = "Subnet ID where the instances will be deployed"
+    type        = string
+    default     = "subnet-6346ad2b"
 }
 
 variable "security_group_id" {
-  type        = string
-  description = "Security Group ID"
+    description = "Security Group ID to associate with the instances"
+    type        = string
+    default     = "sg-0dbb6f79cba5ef701"
 }
 
 variable "key_name" {
-  type        = string
-  description = "Name of the SSH key pair"
+    description = "Key pair name to use for the instances"
+    type        = string
+    default     = "kuldeep-pvc-session"
 }
 
+variable "pvc_cluster_tags" {
+  description = "Tags to apply to all EC2 instances"
+  type = map(string)
+  default = {
+    owner       = "ksahu-ygulati"
+    environment = "development"
+  }
+}
+
+# EC2
 variable "instance_groups" {
-  description = "Map of instance group configs"
+  description = "EC2 instance groups with individual configurations"
   type = map(object({
     count         = number
     ami           = string
@@ -167,4 +160,100 @@ variable "instance_groups" {
     tags          = map(string)
     user_data     = optional(string)
   }))
+  default = {
+    cldr_mngr = {
+      count         = 1
+      ami           = "ami-12345678"
+      instance_type = "t3.medium"
+      volume_size   = 30
+      tags          = { Name = "cldr-mngr" }
+    },
+    ipa_server = {
+      count         = 1
+      ami           = "ami-12345678"
+      instance_type = "t3.medium"
+      volume_size   = 30
+      tags          = { Name = "ipa-server" }
+    },
+    pvcbase_master = {
+      count         = 2
+      ami           = "ami-12345678"
+      instance_type = "t3.large"
+      volume_size   = 50
+      tags          = { Name = "pvcbase-master" }
+    },
+    pvcbase_worker = {
+      count         = 6
+      ami           = "ami-12345678"
+      instance_type = "t3.large"
+      volume_size   = 50
+      tags          = { Name = "pvcbase-worker" }
+    },
+    pvcecs_master = {
+      count         = 1
+      ami           = "ami-12345678"
+      instance_type = "t3.xlarge"
+      volume_size   = 100
+      tags          = { Name = "pvcecs-master" }
+    },
+    pvcecs_worker = {
+      count         = 10
+      ami           = "ami-12345678"
+      instance_type = "t3.xlarge"
+      volume_size   = 100
+      tags          = { Name = "pvcecs-worker" }
+    }
+  }
+}
+
+# VPC
+variable "create_vpc" {
+  description = "Whether to create a new VPC or use the default one"
+  type        = bool
+  default     = false
+}
+
+variable "vpc_name" {
+  description = "Name of new VPC or use the default one"
+  type        = string
+  default     = "cloudera-vpc"
+}
+
+variable "vpc_tags" {
+  description = "Map of tags to apply to the key pair (owner and environment)"
+  type        = map(string)
+  default = {
+    owner       = "ksahu-ygulati" 
+    environment = "development"   
+  }
+}
+
+variable "vpc_cidr_block" {
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "azs" {
+  type = list(string)
+  default = []
+}
+
+variable "private_subnets_cidr" {
+  type = list(string)
+  default = []
+}
+
+variable "public_subnets_cidr" {
+  type = list(string)
+  default = []
+}
+
+variable "enable_nat_gateway" {
+  type    = bool
+  default = false
+}
+
+variable "enable_vpn_gateway" {
+  type    = bool
+  default = false
 }

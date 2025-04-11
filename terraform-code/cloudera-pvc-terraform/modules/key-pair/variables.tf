@@ -4,6 +4,15 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
+variable "pvc_cluster_tags" {
+  description = "Map of tags to apply to the key pair (owner and environment)"
+  type        = map(string)
+  default = {
+    "owner"       = "your-owner"
+    "environment" = "your-environment"
+  }
+}
+
 variable "create_keypair" {
   description = "Flag to decide whether to create a new key pair or use an existing one"
   type        = string
@@ -13,12 +22,13 @@ variable "create_keypair" {
 variable "existing_keypair_name" {
   description = "The name of the existing key pair (if using an existing one)"
   type        = string
-  default     = "my-existing-keypair" # Note: without the .pem
+  default     = "kuldeep-pvc-session" # Note: without the .pem
 }
 
 variable "keypair_name" {
   description = "Name of the key pair"
   type        = string
+  default     = "pvc-new-keypair"
 }
 
 variable "keypair_tags" {

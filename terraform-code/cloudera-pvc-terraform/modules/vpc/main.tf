@@ -6,8 +6,8 @@
 #   name                 = var.vpc_name
 #   cidr                 = var.vpc_cidr
 #   azs                  = var.availability_zones
-#   public_subnets       = var.public_subnets
-#   private_subnets      = var.private_subnets
+#   public_subnets_cidr       = var.public_subnets_cidr
+#   private_subnets_cidr      = var.private_subnets_cidr
 #   enable_nat_gateway   = var.enable_nat_gateway
 #   single_nat_gateway   = true
 #   enable_dns_support   = true
@@ -30,8 +30,8 @@ module "vpc" {
   cidr = var.vpc_cidr_block
 
   azs             = var.azs
-  private_subnets = var.private_subnets
-  public_subnets  = var.public_subnets
+  private_subnets = var.private_subnets_cidr
+  public_subnets  = var.public_subnets_cidr
 
   enable_nat_gateway = var.enable_nat_gateway
   enable_vpn_gateway = var.enable_vpn_gateway

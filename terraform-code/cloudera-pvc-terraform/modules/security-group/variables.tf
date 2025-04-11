@@ -6,6 +6,12 @@
 # variable "env_name" {}
 # variable "owner" {}
 
+variable "aws_region" {
+  description = "AWS Region"
+  type        = string
+  default     = "ap-southeast-1"
+}
+
 variable "create_new_sg" {
   description = "Flag to decide whether to create a new security group or use an existing one"
   type        = bool
@@ -27,6 +33,8 @@ variable "sg_name" {
 variable "sg_description" {
   description = "Description of the security group"
   type        = string
+  default     = "Cloudera security group"
+
 }
 
 variable "vpc_id" {

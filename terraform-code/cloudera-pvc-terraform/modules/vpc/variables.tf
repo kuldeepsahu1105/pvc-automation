@@ -4,15 +4,21 @@
 # variable "availability_zones" {
 #   type = list(string)
 # }
-# variable "public_subnets" {
+# variable "public_subnets_cidr" {
 #   type = list(string)
 # }
-# variable "private_subnets" {
+# variable "private_subnets_cidr" {
 #   type = list(string)
 # }
 # variable "enable_nat_gateway" {}
 # variable "env_name" {}
 # variable "owner" {}
+
+variable "aws_region" {
+  description = "AWS Region"
+  type        = string
+  default     = "ap-southeast-1"
+}
 
 variable "create_vpc" {
   description = "Whether to create a new VPC or use the default one"
@@ -23,15 +29,15 @@ variable "create_vpc" {
 variable "vpc_name" {
   description = "Name of new VPC or use the default one"
   type        = string
-  default     = "my-vpc"
+  default     = "cloudera-vpc"
 }
 
 variable "vpc_tags" {
   description = "Map of tags to apply to the key pair (owner and environment)"
   type        = map(string)
   default = {
-    "owner"       = "your-owner"
-    "environment" = "your-environment"
+    owner       = "ksahu-ygulati" 
+    environment = "development"   
   }
 }
 
@@ -45,12 +51,12 @@ variable "azs" {
   default = []
 }
 
-variable "private_subnets" {
+variable "private_subnets_cidr" {
   type = list(string)
   default = []
 }
 
-variable "public_subnets" {
+variable "public_subnets_cidr" {
   type = list(string)
   default = []
 }
@@ -63,9 +69,4 @@ variable "enable_nat_gateway" {
 variable "enable_vpn_gateway" {
   type    = bool
   default = false
-}
-
-variable "tags" {
-  type    = map(string)
-  default = {}
 }
